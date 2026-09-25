@@ -370,8 +370,10 @@ function renderSched() {
     const li = el("li", "pair"); li.style.setProperty("--cc", p.hw ? courseColor(p.hw) : "var(--line)"); li.style.setProperty("--cct", p.hw ? courseText(p.hw) : "var(--muted)");
     const tm = el("div", "ptime"); tm.append(el("b", null, p.s), el("span", null, p.e));
     const b = el("div", "pbody"); b.append(el("span", "pname", p.n), el("span", "pmeta", p.t + " · " + p.r), el("span", "pmeta", p.p));
-    // Ссылка на онлайн-пару (хранится в базе, видна только вошедшим): resources, блок «pairs», title = предмет.
-    const link = res.find((r) => r.block === "pairs" && r.url && (r.title === p.hw || r.title === p.n));
+    // Ссылка на онлайн-пару (хранится в базе, видна только вошедшим): resources, блок «pairs»,
+    // title = преподаватель (только его пары) или предмет (все пары предмета).
+    const pl = res.filter((r) => r.block === "pairs" && r.url);
+    const link = pl.find((r) => r.title === p.p) || pl.find((r) => r.title === p.hw || r.title === p.n);
     if (link) { const a = el("a", "pjoin", "🎥 " + (link.note || "Подключиться к конференции") + " →"); a.href = link.url; a.target = "_blank"; a.rel = "noopener"; b.appendChild(a); }
     const due = p.hw ? hw.filter((x) => x.course === p.hw && x.due === schedDate) : [];
     if (due.length) b.appendChild(el("span", "phw", "Сдать в этот день: " + due.length));
@@ -584,7 +586,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "17";
+const APP_VERSION = "18";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
