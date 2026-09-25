@@ -200,3 +200,4 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .vt{color:var(--muted);overflow-wrap:anywhere}
 .vex{grid-column:1/-1;font-size:13px;color:var(--muted);font-style:italic}
 .vrow.hid .vt,.vrow.hid .vex{filter:blur(6px);user-select:none}
+.pjoin{align-self:flex-start;margin-top:6px;padding:6px 12px;border-radius:10px;background:var(--cc);color:#fff;font-size:14px;font-weight:700;text-decoration:none;text-shadow:0 0 2px rgba(0,0,0,.35)}
