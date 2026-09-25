@@ -366,7 +366,10 @@ setInterval(() => { if (document.visibilityState === "visible") load(); }, 5 * 6
 /* ---------- Вход по логину и паролю ---------- */
 // Логин — короткое имя; в Supabase он хранится как «имя@LOGIN_DOMAIN» (не настоящая почта, письма не отправляются).
 const LOGIN_DOMAIN = cfg.loginDomain;
-const toEmail = (login) => { const l = login.trim().toLowerCase(); return l.includes("@") ? l : l + "@" + LOGIN_DOMAIN; };
+// Можно вводить по-русски: «Маша» → masha.
+const TR = { а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"kh",ц:"ts",ч:"ch",ш:"sh",щ:"sch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya" };
+const translit = (t) => [...t].map((c) => (c in TR ? TR[c] : c)).join("");
+const toEmail = (login) => { const l = translit(login.trim().toLowerCase()).replace(/\s+/g, ""); return l.includes("@") ? l : l + "@" + LOGIN_DOMAIN; };
 const toLogin = (email) => (email || "").endsWith("@" + LOGIN_DOMAIN) ? email.slice(0, -LOGIN_DOMAIN.length - 1) : email || "";
 function loginMsg(t, err) { const m = $("loginMsg"); m.textContent = t || ""; m.classList.toggle("err", !!err); }
 function showLogin() {
