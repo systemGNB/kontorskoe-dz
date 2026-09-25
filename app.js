@@ -258,10 +258,7 @@ function filterMats() {
   if (!q) { showMats(mats); return; }
   showMats(mats.filter((m) => [m.text, m.caption, m.file_name, m.course].some((v) => (v || "").toLowerCase().includes(q))));
 }
-function renderMatsBox() {
-  $("matsCnt").textContent = mats.length || "";
-  if (!$("matsBox").hidden) filterMats();
-}
+function renderMatsBox() {} // раздел «Из Telegram» убран; материалы видны в заданиях и в «Для Примакова»
 
 async function toggleDone(id, on, li, cb, onToggle) {
   if (on) mine.add(id); else mine.delete(id);
@@ -443,7 +440,6 @@ document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", ()
   document.querySelectorAll(".tool").forEach((x) => { x.classList.remove("on"); x.setAttribute("aria-expanded", "false"); });
   if (!open) return;
   panel.hidden = false; t.classList.add("on"); t.setAttribute("aria-expanded", "true");
-  if (id === "matsBox") filterMats();
   if (id === "esBox" || id === "enBox") renderVocab(panel);
   if (id === "primBox") renderPrim();
   if (id === "booksBox" && !books.some((b) => b.pages && Object.keys(b.pages).length)) $("bookOut").innerHTML = "<p class='sum'>Учебники ещё загружаются.</p>";
@@ -499,7 +495,6 @@ function renderCounts() {
   $("enCnt").textContent = vocab.filter((v) => v.lang === "en").length || "";
   $("primCnt").textContent = res.filter((r) => r.block === "primakov").length || "";
 }
-let matsT; $("matsQ").addEventListener("input", () => { clearTimeout(matsT); matsT = setTimeout(filterMats, 250); });
 $("bookSel").addEventListener("change", () => { $("bookOut").innerHTML = ""; vb = null; });
 
 function setStatus(t) { $("status").textContent = t; }
@@ -586,7 +581,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "15";
+const APP_VERSION = "16";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

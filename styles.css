@@ -179,11 +179,11 @@ details.ocr summary{cursor:pointer;color:var(--accent);font-size:13px;font-weigh
 details.ocr .sum{white-space:pre-line;margin-top:6px}
 
 /* Плитки разделов */
-.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
-.tool{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:58px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);border-left:4px solid var(--tc);background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tool{position:relative;display:flex;flex-direction:row;align-items:center;gap:8px;min-height:44px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);border-left:4px solid var(--tc);background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .tool .ti{font-size:16px;line-height:1}
-.tool .tl{font-size:12px;font-weight:600;line-height:1.2}
-.tool .tn{position:absolute;top:6px;right:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tool .tl{font-size:13px;font-weight:600;line-height:1.2;padding-right:18px}
+.tool .tn{position:absolute;top:50%;transform:translateY(-50%);right:10px;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .tool.on{background:var(--tc);border-color:var(--tc);color:#fff;text-shadow:0 0 2px rgba(0,0,0,.45)}
 .tool.on .tn{color:#fff}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:-10px}
