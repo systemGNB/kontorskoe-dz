@@ -426,38 +426,34 @@ $("prevM").addEventListener("click", () => { view.setUTCMonth(view.getUTCMonth()
 $("nextM").addEventListener("click", () => { view.setUTCMonth(view.getUTCMonth() + 1); renderCal(); });
 $("clearF").addEventListener("click", () => { sel = null; schedDate = null; render(); });
 
-/* ---------- Учебники: любая страница ---------- */
-let vb = null, vp = null;
+/* ---------- Учебники: ссылки на целые PDF ---------- */
+const bookPdfs = (b) => (b.pages && b.pages.pdf && b.pages.pdf.files) || [];
 function renderBooks() {
-  const sel2 = $("bookSel");
-  const avail = books.filter((b) => b.pages && Object.keys(b.pages).length);
-  $("booksCnt").textContent = avail.length || "";
-  if (!avail.length) return;
-  const cur = sel2.value;
-  sel2.innerHTML = "";
-  avail.forEach((b) => { const o = el("option", null, b.title); o.value = b.slug; sel2.appendChild(o); });
-  if (avail.some((b) => b.slug === cur)) sel2.value = cur;
+  $("booksCnt").textContent = books.filter((b) => bookPdfs(b).length).length || "";
+  if (!$("booksBox").hidden) renderBookLinks();
 }
-function bookNums(b) { return Object.keys(b.pages).map(Number).sort((a, c) => a - c); }
-async function showBookPage(n) {
-  const b = books.find((x) => x.slug === $("bookSel").value); if (!b) return;
-  const nums = bookNums(b), out = $("bookOut"); out.innerHTML = "";
-  if (!b.pages[String(n)]) { out.appendChild(el("p", "sum", "В этом файле есть страницы " + nums[0] + "–" + nums[nums.length - 1] + ".")); return; }
-  vb = b; vp = n; $("pageIn").value = n;
-  try {
-    const [u] = await signedUrls([b.pages[String(n)]]);
-    const f = el("figure"); const im = el("img"); im.src = u; im.alt = b.title + ", стр. " + n;
-    f.append(im, el("figcaption", null, b.title + ", стр. " + n)); out.appendChild(f);
-  } catch (e) { out.appendChild(el("p", "sum", "Не удалось загрузить страницу. Проверь интернет.")); }
+async function renderBookLinks() {
+  const out = $("bookOut"); out.innerHTML = "";
+  const list = books.filter((b) => bookPdfs(b).length).sort((a, c) => (a.course || "").localeCompare(c.course || "", "ru") || a.title.localeCompare(c.title, "ru"));
+  if (!list.length) { out.appendChild(el("p", "sum", "Учебники ещё загружаются — загляни через несколько минут.")); return; }
+  let urls = [];
+  const paths = list.flatMap(bookPdfs);
+  try { urls = await signedUrls(paths); } catch (e) { out.appendChild(el("p", "sum", "Не удалось получить ссылки. Проверь интернет.")); return; }
+  const byPath = new Map(paths.map((p, i) => [p, urls[i]]));
+  list.forEach((b) => {
+    const it = el("div", "mat");
+    const files = bookPdfs(b);
+    if (files.length === 1) { const a = el("a", null, b.title + " →"); a.href = byPath.get(files[0]); a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
+    else {
+      it.appendChild(el("b", null, b.title));
+      const row = el("div", "parts");
+      files.forEach((f, i) => { const a = el("a", null, "Часть " + (i + 1) + " →"); a.href = byPath.get(f); a.target = "_blank"; a.rel = "noopener"; row.appendChild(a); });
+      it.appendChild(row);
+    }
+    if (b.course) it.appendChild(el("p", "sum", b.course));
+    out.appendChild(it);
+  });
 }
-function stepPage(d) {
-  const b = books.find((x) => x.slug === $("bookSel").value); if (!b) return;
-  const nums = bookNums(b); const i = nums.indexOf(vb === b ? vp : nums[0]);
-  const n = nums[Math.min(nums.length - 1, Math.max(0, (i < 0 ? 0 : i) + d))]; showBookPage(n);
-}
-$("pageForm").addEventListener("submit", (e) => { e.preventDefault(); showBookPage(Number($("pageIn").value)); });
-$("prevP").addEventListener("click", () => stepPage(-1));
-$("nextP").addEventListener("click", () => stepPage(1));
 /* ---------- Плитки разделов: открыт один раздел за раз ---------- */
 document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", () => {
   const id = t.dataset.p, panel = $(id), open = panel.hidden;
@@ -467,7 +463,7 @@ document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", ()
   panel.hidden = false; t.classList.add("on"); t.setAttribute("aria-expanded", "true");
   if (id === "esBox" || id === "enBox") renderVocab(panel);
   if (id === "primBox") renderPrim();
-  if (id === "booksBox" && !books.some((b) => b.pages && Object.keys(b.pages).length)) $("bookOut").innerHTML = "<p class='sum'>Учебники ещё загружаются.</p>";
+  if (id === "booksBox") renderBookLinks();
 }));
 
 /* ---------- Слова ---------- */
@@ -520,7 +516,6 @@ function renderCounts() {
   $("enCnt").textContent = vocab.filter((v) => v.lang === "en").length || "";
   $("primCnt").textContent = res.filter((r) => r.block === "primakov").length || "";
 }
-$("bookSel").addEventListener("change", () => { $("bookOut").innerHTML = ""; vb = null; });
 
 function setStatus(t) { $("status").textContent = t; }
 
@@ -606,7 +601,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "22";
+const APP_VERSION = "23";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

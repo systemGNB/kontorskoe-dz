@@ -72,13 +72,7 @@
     </nav>
 
     <section class="panel" id="booksBox" hidden>
-      <h3>Учебники — открыть любую страницу</h3>
-      <form class="book-form" id="pageForm">
-        <select id="bookSel" aria-label="Учебник"></select>
-        <input id="pageIn" type="number" inputmode="numeric" min="1" max="999" placeholder="стр." aria-label="Номер страницы" required>
-        <button class="primary" type="submit">Открыть</button>
-      </form>
-      <div class="book-nav"><button class="nav" id="prevP" type="button" aria-label="Предыдущая страница">‹</button><button class="nav" id="nextP" type="button" aria-label="Следующая страница">›</button></div>
+      <h3>Учебники</h3>
       <div id="bookOut"></div>
     </section>
 
@@ -107,7 +101,7 @@
 
     <footer>
       <p id="status" role="status">Загрузка…</p>
-      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 22</span></p>
+      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 23</span></p>
       <details class="acct"><summary>Аккаунт</summary><p><span id="who"></span> · <button class="link" id="logoutBtn" type="button">Выйти</button></p><p class="hint">После выхода нужно будет снова ввести логин и пароль.</p></details>
     </footer>
   </div>
