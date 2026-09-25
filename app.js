@@ -432,40 +432,24 @@ function renderBooks() {
   $("booksCnt").textContent = books.filter((b) => bookPdfs(b).length).length || "";
   if (!$("booksBox").hidden) renderBookLinks();
 }
-let bookTab = "Английский";
 async function renderBookLinks() {
   const out = $("bookOut"); out.innerHTML = "";
   const all = books.filter((b) => bookPdfs(b).length);
   if (!all.length) { out.appendChild(el("p", "sum", "Учебники ещё загружаются — загляни через несколько минут.")); return; }
-  // Вкладки по предметам: Английский / Испанский (и другие, если появятся).
-  const courses = [...new Set(all.map((b) => b.course || "Другое"))].sort((a, c) => a.localeCompare(c, "ru"));
-  if (!courses.includes(bookTab)) bookTab = courses[0];
-  const tabs = el("div", "btabs"); tabs.setAttribute("role", "tablist");
-  courses.forEach((c) => {
-    const t = el("button", "btab" + (c === bookTab ? " on" : ""), (c === "Английский" ? "🇬🇧 " : c === "Испанский" ? "🇪🇸 " : "") + c);
-    t.type = "button"; t.setAttribute("role", "tab"); t.setAttribute("aria-selected", c === bookTab ? "true" : "false");
-    t.style.setProperty("--cc", courseColor(c));
-    t.addEventListener("click", () => { bookTab = c; renderBookLinks(); });
-    tabs.appendChild(t);
-  });
-  out.appendChild(tabs);
-  const list = all.filter((b) => (b.course || "Другое") === bookTab).sort((a, c) => a.title.localeCompare(c.title, "ru"));
-  const box = el("div", "blist"); box.style.setProperty("--cc", courseColor(bookTab)); out.appendChild(box);
   let urls = [];
-  const paths = list.flatMap(bookPdfs);
-  try { urls = await signedUrls(paths); } catch (e) { box.appendChild(el("p", "sum", "Не удалось получить ссылки. Проверь интернет.")); return; }
+  const paths = all.flatMap(bookPdfs);
+  try { urls = await signedUrls(paths); } catch (e) { out.appendChild(el("p", "sum", "Не удалось получить ссылки. Проверь интернет.")); return; }
   const byPath = new Map(paths.map((p, i) => [p, urls[i]]));
-  list.forEach((b) => {
-    const it = el("div", "mat");
-    const files = bookPdfs(b);
-    if (files.length === 1) { const a = el("a", null, b.title + " →"); a.href = byPath.get(files[0]); a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
-    else {
-      it.appendChild(el("b", null, b.title));
-      const row = el("div", "parts");
-      files.forEach((f, i) => { const a = el("a", null, "Часть " + (i + 1) + " →"); a.href = byPath.get(f); a.target = "_blank"; a.rel = "noopener"; row.appendChild(a); });
-      it.appendChild(row);
-    }
-    box.appendChild(it);
+  // Сначала английский, потом испанский, потом остальное — заголовок предмета и под ним его учебники.
+  const order = (c) => (c === "Английский" ? 0 : c === "Испанский" ? 1 : 2);
+  const courses = [...new Set(all.map((b) => b.course || "Другое"))].sort((a, c) => order(a) - order(c) || a.localeCompare(c, "ru"));
+  courses.forEach((c) => {
+    const h = el("h4", "bhead", c); h.style.setProperty("--cc", courseColor(c)); out.appendChild(h);
+    all.filter((b) => (b.course || "Другое") === c).sort((a, d) => a.title.localeCompare(d.title, "ru")).forEach((b) => {
+      const it = el("div", "bitem"); const files = bookPdfs(b);
+      files.forEach((f, i) => { const a = el("a", null, b.title + (files.length > 1 ? " — часть " + (i + 1) : "") + " →"); a.href = byPath.get(f); a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); });
+      out.appendChild(it);
+    });
   });
 }
 /* ---------- Плитки разделов: открыт один раздел за раз ---------- */
@@ -615,7 +599,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "24";
+const APP_VERSION = "25";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

@@ -205,7 +205,6 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .legend .dot{flex:none;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1.5px var(--surface),0 0 0 2.5px var(--cc)}
 @media (min-width:560px){.legend{grid-template-columns:repeat(6,1fr)}}
 .parts{display:flex;flex-wrap:wrap;gap:6px 14px}
-.btabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px}
-.btab{font:inherit;font-size:13px;font-weight:600;padding:7px 8px;border-radius:10px;border:1px solid var(--line);border-bottom:3px solid var(--cc);background:var(--sunk);color:var(--ink);cursor:pointer}
-.btab.on{background:var(--cc);border-color:var(--cc);color:#fff;text-shadow:0 0 2px rgba(0,0,0,.45)}
-.blist{border-left:3px solid var(--cc);padding-left:10px}
+.bhead{margin:12px 0 4px;font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink);padding-left:10px;border-left:4px solid var(--cc)}
+.bhead:first-child{margin-top:4px}
+.bitem{display:flex;flex-direction:column;gap:4px;padding:6px 0 6px 14px;font-size:15px}
