@@ -262,9 +262,32 @@ function filterMats() {
 }
 function renderMatsBox() {} // раздел «Из Telegram» убран; материалы видны в заданиях и в «Для Примакова»
 
+/* ---------- Конфетти при отметке «сделано» ---------- */
+const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+function celebrate(fromEl, course) {
+  if (!window.confetti || calm()) return;
+  const r = fromEl.getBoundingClientRect();
+  const origin = { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight };
+  const css = getComputedStyle(document.documentElement);
+  const cc = COURSE_COLORS[course] ? css.getPropertyValue("--k-" + COURSE_COLORS[course]).trim() : "";
+  const colors = [cc || "#5B3FA8", "#FFD43B", "#FF6B6B", "#6EA8FE", "#5ED3A9", "#B197FC"];
+  confetti({ particleCount: 70, spread: 75, startVelocity: 32, origin, colors, scalar: 0.9, ticks: 160, zIndex: 9999 });
+  // Все текущие задания сделаны — большой салют с двух сторон.
+  const cur = hw.filter((x) => !x.due || gap(x.due) >= 0);
+  if (cur.length && cur.every((x) => mine.has(x.id))) {
+    const end = Date.now() + 1200;
+    (function frame() {
+      confetti({ particleCount: 6, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors, zIndex: 9999 });
+      confetti({ particleCount: 6, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors, zIndex: 9999 });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+  }
+}
+
 async function toggleDone(id, on, li, cb, onToggle) {
   if (on) mine.add(id); else mine.delete(id);
   lsSet("kdz-done", [...mine]); li.classList.toggle("done", on); onToggle();
+  if (on) { const t = hw.find((x) => x.id === id); celebrate(cb.parentElement, t ? t.course : ""); }
   const res = on
     ? await sb.from("done").upsert({ user_id: user.id, homework_id: id }, { onConflict: "user_id,homework_id", ignoreDuplicates: true })
     : await sb.from("done").delete().eq("homework_id", id).eq("user_id", user.id);
@@ -583,7 +606,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "21";
+const APP_VERSION = "22";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

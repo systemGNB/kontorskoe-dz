@@ -1,7 +1,7 @@
 // Офлайн-кэш оболочки приложения. Данные (Supabase) не кэшируются здесь —
 // последняя версия заданий хранится в localStorage приложения.
-const CACHE = "kdz-v21";
-const SHELL = ["./", "index.html", "styles.css", "app.js", "config.js", "vendor/supabase.js",
+const CACHE = "kdz-v22";
+const SHELL = ["./", "index.html", "styles.css", "app.js", "config.js", "vendor/supabase.js", "vendor/confetti.js",
   "install.html", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
