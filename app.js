@@ -49,6 +49,7 @@ applyThemeIcon();
 /* ---------- Состояние ---------- */
 let hw = lsGet("kdz-hw", []);
 let books = lsGet("kdz-books", []);
+let mats = lsGet("kdz-mat", []);
 let mine = new Set(lsGet("kdz-done", []));
 let sel = null;
 let view = new Date(today + "T00:00:00Z"); view.setUTCDate(1);
@@ -162,6 +163,60 @@ async function loadScans(det, pages) {
   });
 }
 
+/* ---------- Материалы из Telegram ---------- */
+const DAY = 86400000;
+/** Материалы к заданию: по номеру («дорожка 47», «pista 12») или по времени — за 2 недели до срока. */
+function taskMaterials(x) {
+  if (!x.telegram) return [];
+  const own = mats.filter((m) => m.course === x.course);
+  if (!own.length) return [];
+  const strong = [...x.telegram.matchAll(/(?:дорожк\S*|трек\S*|track|pista|аудио|audio|№)\s*(\d{1,3})/gi)].map((m) => m[1]);
+  if (strong.length) {
+    const hit = own.filter((m) => strong.some((n) => new RegExp("(^|[^\\d])" + n + "([^\\d]|$)").test((m.file_name || "") + " " + (m.caption || ""))));
+    if (hit.length) return hit.slice(0, 6);
+  }
+  const end = x.due ? Date.parse(x.due + "T23:59:59+03:00") : Date.now();
+  return own.filter((m) => { const t = Date.parse(m.posted_at); return t <= end && t >= end - 14 * DAY; }).slice(0, 6);
+}
+function linkify(text) {
+  const f = document.createDocumentFragment();
+  text.split(/(https?:\/\/[^\s]+)/g).forEach((part, i) => {
+    if (i % 2) { const a = el("a", null, part); a.href = part; a.target = "_blank"; a.rel = "noopener"; f.appendChild(a); }
+    else if (part) f.appendChild(document.createTextNode(part));
+  });
+  return f;
+}
+const matDate = (m) => { const d = new Date(m.posted_at); return d.getDate() + " " + MON[d.getMonth()]; };
+async function renderMats(box, list, showCourse) {
+  let urls = [];
+  try { urls = await signedUrls(list.filter((m) => m.path).map((m) => m.path)); } catch (e) {}
+  const byPath = new Map(list.filter((m) => m.path).map((m, i) => [m.path, urls[i]]));
+  list.forEach((m) => {
+    const it = el("div", "mat");
+    const head = (showCourse ? m.course + " · " : "") + matDate(m) + (m.file_name && m.kind !== "photo" ? " · " + m.file_name : "");
+    it.appendChild(el("div", "mat-h", head));
+    const u = m.path ? byPath.get(m.path) : "";
+    if (u && (m.kind === "audio" || m.kind === "voice")) { const au = el("audio"); au.controls = true; au.preload = "none"; au.src = u; it.appendChild(au); }
+    else if (u && m.kind === "photo") { const im = el("img"); im.src = u; im.loading = "lazy"; im.alt = m.caption || "Фото из Telegram"; it.appendChild(im); }
+    else if (u) { const a = el("a", null, "Открыть файл →"); a.href = u; a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
+    if (m.caption) { const c = el("p", "sum"); c.appendChild(linkify(m.caption)); it.appendChild(c); }
+    if (!u && m.kind !== "link" && m.tg_link) { const a = el("a", null, "Файл большой — открыть в Telegram →"); a.href = m.tg_link; a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
+    box.appendChild(it);
+  });
+}
+function matsDetails(list, title, showCourse) {
+  const det = el("details", "pages");
+  det.appendChild(el("summary", null, title + " (" + list.length + ")"));
+  det.addEventListener("toggle", () => { if (det.open && !det.dataset.loaded) { det.dataset.loaded = "1"; renderMats(det, list, showCourse); } });
+  return det;
+}
+function renderMatsBox() {
+  const box = $("matsBox"); box.hidden = !mats.length;
+  if (!mats.length) return;
+  const out = $("matsOut"); out.innerHTML = ""; delete box.dataset.loaded;
+  if (box.open) { box.dataset.loaded = "1"; renderMats(out, mats.slice(0, 30), true); }
+}
+
 async function toggleDone(id, on, li, cb, onToggle) {
   if (on) mine.add(id); else mine.delete(id);
   lsSet("kdz-done", [...mine]); li.classList.toggle("done", on); onToggle();
@@ -191,7 +246,11 @@ function taskRow(x, onToggle) {
     det.addEventListener("toggle", () => { if (det.open && !det.dataset.loaded) { det.dataset.loaded = "1"; loadScans(det, pages); } });
     b.appendChild(det);
   }
-  if (x.telegram) b.appendChild(el("span", "tg", "Из Telegram: " + x.telegram));
+  if (x.telegram) {
+    b.appendChild(el("span", "tg", "Из Telegram: " + x.telegram));
+    const tm = taskMaterials(x);
+    if (tm.length) b.appendChild(matsDetails(tm, "Материалы из Telegram", false));
+  }
   if (x.link) { const a = el("a", null, "Открыть в Google Классе →"); a.href = x.link; a.target = "_blank"; a.rel = "noopener"; b.appendChild(a); }
   li.append(cell, b);
   return li;
@@ -277,7 +336,7 @@ $("nextW").addEventListener("click", () => { schedDate = addD(schedDate, 7); ren
 
 /* ---------- Отрисовка ---------- */
 function render() {
-  renderCal(); renderSched(); renderBooks();
+  renderCal(); renderSched(); renderBooks(); renderMatsBox();
   const list = $("list"); list.innerHTML = "";
   if (sel) {
     $("filter").hidden = false; $("filterT").textContent = "Срок: " + human(sel);
@@ -328,6 +387,7 @@ function stepPage(d) {
 $("pageForm").addEventListener("submit", (e) => { e.preventDefault(); showBookPage(Number($("pageIn").value)); });
 $("prevP").addEventListener("click", () => stepPage(-1));
 $("nextP").addEventListener("click", () => stepPage(1));
+$("matsBox").addEventListener("toggle", () => { const box = $("matsBox"); if (box.open && !box.dataset.loaded) { box.dataset.loaded = "1"; renderMats($("matsOut"), mats.slice(0, 30), true); } });
 $("bookSel").addEventListener("change", () => { $("bookOut").innerHTML = ""; vb = null; });
 
 function setStatus(t) { $("status").textContent = t; }
@@ -338,11 +398,13 @@ async function load() {
   if (!user || loading) return;
   loading = true;
   try {
-    const [h, d, bk] = await Promise.all([
+    const [h, d, bk, mt] = await Promise.all([
       sb.from("homework").select("id,course,title,summary,due,link,telegram,pages").order("due", { ascending: true, nullsFirst: false }),
       sb.from("done").select("homework_id"),
       sb.from("books").select("slug,title,course,aliases,pages"),
+      sb.from("materials").select("id,course,kind,file_name,caption,path,duration,posted_at,tg_link").order("posted_at", { ascending: false }).limit(300),
     ]);
+    if (!mt.error) { mats = mt.data || []; lsSet("kdz-mat", mats); }
     if (!bk.error) { books = bk.data || []; lsSet("kdz-books", books); }
     if (h.error) throw h.error;
     if (d.error) throw d.error;
@@ -396,7 +458,7 @@ $("loginForm").addEventListener("submit", async (ev) => {
 $("logoutBtn").addEventListener("click", async () => {
   if (!confirm("Выйти? Чтобы войти снова, понадобятся логин и пароль.")) return;
   await sb.auth.signOut();
-  lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); hw = []; books = []; mine = new Set();
+  lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); lsDel("kdz-mat"); hw = []; books = []; mats = []; mine = new Set();
 });
 
 sb.auth.onAuthStateChange((event, session) => {
