@@ -3,7 +3,7 @@
   --bg:#F3F4F8; --surface:#FFFFFF; --sunk:#EBEDF3; --ink:#1B1E2B; --muted:#5D6275; --line:#DADDE8;
   --accent:#5B3FA8; --accent-soft:#ECE7F8; --on-accent:#FFFFFF;
   --d0:#B42318; --d0s:#FDE4E1; --d1:#C4320A; --d1s:#FEE8DC; --d2:#B54708; --d2s:#FEF0D7; --d3:#93600A; --d3s:#FDF3D2; --d4:#7A6A0C; --d4s:#F8F5D0; --d5:#5E6A12; --d5s:#F1F5D6;
-  --k-posi:#8B1A2B; --k-posi-t:#8B1A2B; --k-mmsi:#E8579B; --k-mmsi-t:#BE2F72; --k-es:#F5C518; --k-es-t:#8F6B00;
+  --k-posi:#BF131B; --k-posi-t:#BF131B; --k-mmsi:#E8579B; --k-mmsi-t:#BE2F72; --k-es:#F5C518; --k-es-t:#8F6B00;
   --k-en:#2F6FEB; --k-en-t:#2356C4; --k-ads:#38BDF8; --k-ads-t:#0A76A6; --k-mkt:#8B5CF6; --k-mkt-t:#6A3BD8;
   --c1:#2E6FD8; --c2:#D2572B; --c3:#1F8A6A; --c4:#A83F8C; --c5:#7A5AC8; --c6:#8A6D1E; --c7:#3C7D8C;
   --display:"Unbounded","Golos Text",system-ui,sans-serif;
@@ -15,12 +15,12 @@
     --bg:#12131A; --surface:#1B1D27; --sunk:#232634; --ink:#E8E9F1; --muted:#A0A4B8; --line:#2E3242;
     --accent:#B39DFF; --accent-soft:#2A2442; --on-accent:#12131A;
     --d0:#FF8A80; --d0s:#3F1A18; --d1:#FF9466; --d1s:#3D2016; --d2:#FFB547; --d2s:#3A2A12; --d3:#F2C94C; --d3s:#342C10; --d4:#D9D35A; --d4s:#2E2C10; --d5:#B8D36A; --d5s:#272E12;
-    --k-posi:#B3263D; --k-posi-t:#E0707F; --k-mmsi:#FF7AB8; --k-mmsi-t:#FF9CCB; --k-es:#FFD43B; --k-es-t:#FFD95C;
+    --k-posi:#BF131B; --k-posi-t:#E5535A; --k-mmsi:#FF7AB8; --k-mmsi-t:#FF9CCB; --k-es:#FFD43B; --k-es-t:#FFD95C;
     --k-en:#6EA8FE; --k-en-t:#8DBBFF; --k-ads:#7DD3FC; --k-ads-t:#9ADDFD; --k-mkt:#B197FC; --k-mkt-t:#C4B1FD;
     --c1:#7FA8FF; --c2:#FF9A6E; --c3:#5ED3A9; --c4:#F08BD2; --c5:#B79CFF; --c6:#E0C06A; --c7:#6CC7D9;}
 }
 :root[data-theme="dark"]{color-scheme:dark;
-  --k-posi:#B3263D; --k-posi-t:#E0707F; --k-mmsi:#FF7AB8; --k-mmsi-t:#FF9CCB; --k-es:#FFD43B; --k-es-t:#FFD95C;
+  --k-posi:#BF131B; --k-posi-t:#E5535A; --k-mmsi:#FF7AB8; --k-mmsi-t:#FF9CCB; --k-es:#FFD43B; --k-es-t:#FFD95C;
   --k-en:#6EA8FE; --k-en-t:#8DBBFF; --k-ads:#7DD3FC; --k-ads-t:#9ADDFD; --k-mkt:#B197FC; --k-mkt-t:#C4B1FD;
   --bg:#12131A; --surface:#1B1D27; --sunk:#232634; --ink:#E8E9F1; --muted:#A0A4B8; --line:#2E3242;
   --accent:#B39DFF; --accent-soft:#2A2442; --on-accent:#12131A;
