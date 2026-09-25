@@ -432,13 +432,28 @@ function renderBooks() {
   $("booksCnt").textContent = books.filter((b) => bookPdfs(b).length).length || "";
   if (!$("booksBox").hidden) renderBookLinks();
 }
+let bookTab = "Английский";
 async function renderBookLinks() {
   const out = $("bookOut"); out.innerHTML = "";
-  const list = books.filter((b) => bookPdfs(b).length).sort((a, c) => (a.course || "").localeCompare(c.course || "", "ru") || a.title.localeCompare(c.title, "ru"));
-  if (!list.length) { out.appendChild(el("p", "sum", "Учебники ещё загружаются — загляни через несколько минут.")); return; }
+  const all = books.filter((b) => bookPdfs(b).length);
+  if (!all.length) { out.appendChild(el("p", "sum", "Учебники ещё загружаются — загляни через несколько минут.")); return; }
+  // Вкладки по предметам: Английский / Испанский (и другие, если появятся).
+  const courses = [...new Set(all.map((b) => b.course || "Другое"))].sort((a, c) => a.localeCompare(c, "ru"));
+  if (!courses.includes(bookTab)) bookTab = courses[0];
+  const tabs = el("div", "btabs"); tabs.setAttribute("role", "tablist");
+  courses.forEach((c) => {
+    const t = el("button", "btab" + (c === bookTab ? " on" : ""), (c === "Английский" ? "🇬🇧 " : c === "Испанский" ? "🇪🇸 " : "") + c);
+    t.type = "button"; t.setAttribute("role", "tab"); t.setAttribute("aria-selected", c === bookTab ? "true" : "false");
+    t.style.setProperty("--cc", courseColor(c));
+    t.addEventListener("click", () => { bookTab = c; renderBookLinks(); });
+    tabs.appendChild(t);
+  });
+  out.appendChild(tabs);
+  const list = all.filter((b) => (b.course || "Другое") === bookTab).sort((a, c) => a.title.localeCompare(c.title, "ru"));
+  const box = el("div", "blist"); box.style.setProperty("--cc", courseColor(bookTab)); out.appendChild(box);
   let urls = [];
   const paths = list.flatMap(bookPdfs);
-  try { urls = await signedUrls(paths); } catch (e) { out.appendChild(el("p", "sum", "Не удалось получить ссылки. Проверь интернет.")); return; }
+  try { urls = await signedUrls(paths); } catch (e) { box.appendChild(el("p", "sum", "Не удалось получить ссылки. Проверь интернет.")); return; }
   const byPath = new Map(paths.map((p, i) => [p, urls[i]]));
   list.forEach((b) => {
     const it = el("div", "mat");
@@ -450,8 +465,7 @@ async function renderBookLinks() {
       files.forEach((f, i) => { const a = el("a", null, "Часть " + (i + 1) + " →"); a.href = byPath.get(f); a.target = "_blank"; a.rel = "noopener"; row.appendChild(a); });
       it.appendChild(row);
     }
-    if (b.course) it.appendChild(el("p", "sum", b.course));
-    out.appendChild(it);
+    box.appendChild(it);
   });
 }
 /* ---------- Плитки разделов: открыт один раздел за раз ---------- */
@@ -601,7 +615,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "23";
+const APP_VERSION = "24";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
