@@ -48,6 +48,7 @@ applyThemeIcon();
 
 /* ---------- Состояние ---------- */
 let hw = lsGet("kdz-hw", []);
+let books = lsGet("kdz-books", []);
 let mine = new Set(lsGet("kdz-done", []));
 let sel = null;
 let view = new Date(today + "T00:00:00Z"); view.setUTCDate(1);
@@ -110,13 +111,53 @@ function dueLine(x) {
   return w;
 }
 
+/* ---------- Страницы учебников ---------- */
+// «стр. 14–15», «p. 129», «pp. 120-121», «pág. 49», «стр. 45, 47 и 49–51»
+const PAGE_RE = /(?<![A-Za-zА-Яа-яЁёÀ-ÿ])(?:(?:стр|p|pp|pg|pág|págs|pag|page|pages|página|páginas)\.?|с\.)\s*(\d{1,3}(?:\s*[–—-]\s*\d{1,3})?(?:\s*(?:,|и|and|y)\s*\d{1,3}(?:\s*[–—-]\s*\d{1,3})?)*)(?!\d)/gi;
+function pageNums(text) {
+  const out = [];
+  for (const m of text.matchAll(PAGE_RE)) {
+    for (const part of m[1].split(/\s*(?:,|и|and|y)\s*/)) {
+      const [a, b] = part.split(/\s*[–—-]\s*/).map(Number);
+      const hi = b && b >= a && b - a <= 30 ? b : a;
+      for (let n = a; n <= hi; n++) if (!out.includes(n)) out.push(n);
+    }
+  }
+  return out;
+}
+function findBook(text, course) {
+  const t = text.toLowerCase();
+  const cand = books.filter((b) => (b.aliases || []).some((a) => t.includes(a)));
+  return cand.find((b) => b.course === course) || cand[0] || null;
+}
+/** Страницы для задания: из учебника целиком (если распознаны), иначе — прикреплённые сканы. */
+function taskPages(x) {
+  const book = findBook(x.title, x.course) || findBook(x.title + " " + (x.summary || ""), x.course);
+  if (book && book.pages) {
+    const nums = pageNums(x.title + " " + (x.summary || "")).filter((n) => book.pages[String(n)]).slice(0, 20);
+    if (nums.length) return nums.map((n) => ({ label: book.title + ", стр. " + n, path: book.pages[String(n)] }));
+  }
+  return x.pages || [];
+}
+
+const urlCache = new Map();
+async function signedUrls(paths) {
+  const need = paths.filter((p) => { const c = urlCache.get(p); return !c || c.exp < Date.now(); });
+  if (need.length) {
+    const { data, error } = await sb.storage.from("scans").createSignedUrls(need, 3600);
+    if (error || !data) throw error || new Error("no data");
+    data.forEach((d, i) => { if (d.signedUrl) urlCache.set(need[i], { url: d.signedUrl, exp: Date.now() + 50 * 60 * 1000 }); });
+  }
+  return paths.map((p) => (urlCache.get(p) || {}).url || "");
+}
+
 async function loadScans(det, pages) {
-  const paths = pages.map((p) => p.path);
-  const { data, error } = await sb.storage.from("scans").createSignedUrls(paths, 3600);
-  if (error || !data) { det.appendChild(el("p", "sum", "Не удалось загрузить сканы. Проверь интернет и открой ещё раз.")); det.dataset.loaded = ""; return; }
+  let urls;
+  try { urls = await signedUrls(pages.map((p) => p.path)); }
+  catch (e) { det.appendChild(el("p", "sum", "Не удалось загрузить страницы. Проверь интернет и открой ещё раз.")); det.dataset.loaded = ""; return; }
   pages.forEach((p, i) => {
     const f = el("figure"); const im = el("img");
-    im.src = data[i] && data[i].signedUrl ? data[i].signedUrl : ""; im.alt = p.label; im.loading = "lazy"; im.decoding = "async";
+    im.src = urls[i]; im.alt = p.label; im.loading = "lazy"; im.decoding = "async";
     f.append(im, el("figcaption", null, p.label)); det.appendChild(f);
   });
 }
@@ -143,7 +184,7 @@ function taskRow(x, onToggle) {
   const b = el("div", "body");
   const t = el("label", "ttl", x.title); t.htmlFor = cb.id; b.append(t);
   if (x.summary) b.appendChild(el("p", "sum", x.summary));
-  const pages = x.pages || [];
+  const pages = taskPages(x);
   if (pages.length) {
     const det = el("details", "pages");
     det.appendChild(el("summary", null, "Страницы учебника (" + pages.length + ")"));
@@ -236,7 +277,7 @@ $("nextW").addEventListener("click", () => { schedDate = addD(schedDate, 7); ren
 
 /* ---------- Отрисовка ---------- */
 function render() {
-  renderCal(); renderSched();
+  renderCal(); renderSched(); renderBooks();
   const list = $("list"); list.innerHTML = "";
   if (sel) {
     $("filter").hidden = false; $("filterT").textContent = "Срок: " + human(sel);
@@ -255,6 +296,40 @@ $("prevM").addEventListener("click", () => { view.setUTCMonth(view.getUTCMonth()
 $("nextM").addEventListener("click", () => { view.setUTCMonth(view.getUTCMonth() + 1); renderCal(); });
 $("clearF").addEventListener("click", () => { sel = null; schedDate = null; render(); });
 
+/* ---------- Учебники: любая страница ---------- */
+let vb = null, vp = null;
+function renderBooks() {
+  const box = $("booksBox"), sel2 = $("bookSel");
+  const avail = books.filter((b) => b.pages && Object.keys(b.pages).length);
+  box.hidden = !avail.length;
+  if (!avail.length) return;
+  const cur = sel2.value;
+  sel2.innerHTML = "";
+  avail.forEach((b) => { const o = el("option", null, b.title); o.value = b.slug; sel2.appendChild(o); });
+  if (avail.some((b) => b.slug === cur)) sel2.value = cur;
+}
+function bookNums(b) { return Object.keys(b.pages).map(Number).sort((a, c) => a - c); }
+async function showBookPage(n) {
+  const b = books.find((x) => x.slug === $("bookSel").value); if (!b) return;
+  const nums = bookNums(b), out = $("bookOut"); out.innerHTML = "";
+  if (!b.pages[String(n)]) { out.appendChild(el("p", "sum", "В этом файле есть страницы " + nums[0] + "–" + nums[nums.length - 1] + ".")); return; }
+  vb = b; vp = n; $("pageIn").value = n;
+  try {
+    const [u] = await signedUrls([b.pages[String(n)]]);
+    const f = el("figure"); const im = el("img"); im.src = u; im.alt = b.title + ", стр. " + n;
+    f.append(im, el("figcaption", null, b.title + ", стр. " + n)); out.appendChild(f);
+  } catch (e) { out.appendChild(el("p", "sum", "Не удалось загрузить страницу. Проверь интернет.")); }
+}
+function stepPage(d) {
+  const b = books.find((x) => x.slug === $("bookSel").value); if (!b) return;
+  const nums = bookNums(b); const i = nums.indexOf(vb === b ? vp : nums[0]);
+  const n = nums[Math.min(nums.length - 1, Math.max(0, (i < 0 ? 0 : i) + d))]; showBookPage(n);
+}
+$("pageForm").addEventListener("submit", (e) => { e.preventDefault(); showBookPage(Number($("pageIn").value)); });
+$("prevP").addEventListener("click", () => stepPage(-1));
+$("nextP").addEventListener("click", () => stepPage(1));
+$("bookSel").addEventListener("change", () => { $("bookOut").innerHTML = ""; vb = null; });
+
 function setStatus(t) { $("status").textContent = t; }
 
 /* ---------- Загрузка данных ---------- */
@@ -263,10 +338,12 @@ async function load() {
   if (!user || loading) return;
   loading = true;
   try {
-    const [h, d] = await Promise.all([
+    const [h, d, bk] = await Promise.all([
       sb.from("homework").select("id,course,title,summary,due,link,telegram,pages").order("due", { ascending: true, nullsFirst: false }),
       sb.from("done").select("homework_id"),
+      sb.from("books").select("slug,title,course,aliases,pages"),
     ]);
+    if (!bk.error) { books = bk.data || []; lsSet("kdz-books", books); }
     if (h.error) throw h.error;
     if (d.error) throw d.error;
     hw = h.data || [];
@@ -332,7 +409,7 @@ $("backBtn").addEventListener("click", () => { $("codeForm").hidden = true; $("e
 $("logoutBtn").addEventListener("click", async () => {
   if (!confirm("Выйти? Чтобы войти снова, понадобится код из письма.")) return;
   await sb.auth.signOut();
-  lsDel("kdz-hw"); lsDel("kdz-done"); hw = []; mine = new Set();
+  lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); hw = []; books = []; mine = new Set();
 });
 
 sb.auth.onAuthStateChange((event, session) => {

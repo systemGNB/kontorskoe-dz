@@ -68,6 +68,17 @@
       <ol class="pairs" id="pairs"></ol>
     </section>
 
+    <details class="books" id="booksBox" hidden>
+      <summary>Учебники — открыть любую страницу</summary>
+      <form class="book-form" id="pageForm">
+        <select id="bookSel" aria-label="Учебник"></select>
+        <input id="pageIn" type="number" inputmode="numeric" min="1" max="999" placeholder="стр." aria-label="Номер страницы" required>
+        <button class="primary" type="submit">Открыть</button>
+      </form>
+      <div class="book-nav"><button class="nav" id="prevP" type="button" aria-label="Предыдущая страница">‹</button><button class="nav" id="nextP" type="button" aria-label="Следующая страница">›</button></div>
+      <div id="bookOut"></div>
+    </details>
+
     <div class="filter" id="filter" hidden><span id="filterT"></span><button id="clearF" type="button">Показать всё</button></div>
     <main class="sec" id="list"></main>
     <details class="past" id="pastBox" hidden><summary id="pastT"></summary><div class="sec" id="past"></div></details>
