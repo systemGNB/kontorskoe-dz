@@ -80,6 +80,7 @@ function badge(due) {
 }
 
 /* ---------- Календарь ---------- */
+const LEGEND_SHORT = { "Анализ данных в социологии": "Анализ данных", "Социология маркетинга": "Соц. маркетинга" };
 function renderCal() {
   const g = $("grid"); g.innerHTML = "";
   $("monthT").textContent = MONN[view.getUTCMonth()] + " " + view.getUTCFullYear();
@@ -107,7 +108,8 @@ function renderCal() {
   }
   const lg = $("legend"); lg.innerHTML = "";
   [...new Set(hw.map((x) => x.course))].sort().forEach((c) => {
-    const s = el("span"); const d = el("span", "dot"); d.style.setProperty("--cc", courseColor(c)); s.append(d, c); lg.appendChild(s);
+    const s = el("span"); const d = el("span", "dot"); d.style.setProperty("--cc", courseColor(c));
+    s.append(d, LEGEND_SHORT[c] || c); s.title = c; lg.appendChild(s);
   });
 }
 
@@ -586,7 +588,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "18";
+const APP_VERSION = "19";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
