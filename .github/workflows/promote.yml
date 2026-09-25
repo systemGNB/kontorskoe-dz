@@ -1,0 +1,30 @@
+# Изменения из рабочих веток claude/… сами попадают в main и публикуются — без ручного merge.
+name: Перенос в main
+
+on:
+  push:
+    branches: ["claude/**"]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Проверка JS
+        run: node --check app.js && node --check sw.js && node --check config.js
+      - name: Перенос в main (только fast-forward)
+        run: git push origin HEAD:refs/heads/main
+      - name: Запуск публикации
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main --repo "$GITHUB_REPOSITORY"

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Конторское ДЗ</title>
+<meta name="description" content="Домашка группы ИМОЗ-24-2: сроки сдачи, пары, страницы учебников.">
+<meta name="theme-color" content="#F3F4F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12131A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Конторское ДЗ">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>try{var t=localStorage.getItem("kdz-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Конторское ДЗ</h1>
+      <p class="sub" id="upd">Пары, сроки сдачи и страницы учебников. Отметки «сделано» видишь только ты.</p>
+    </div>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Сменить тему" title="Сменить тему"></button>
+  </header>
+
+  <!-- Вход -->
+  <section class="login" id="login" hidden>
+    <h2>Вход</h2>
+    <form id="emailForm">
+      <label for="email">Твоя почта из списка группы</label>
+      <input id="email" type="email" inputmode="email" autocomplete="email" required placeholder="name@gmail.com">
+      <button class="primary" type="submit">Получить код</button>
+    </form>
+    <form id="codeForm" hidden>
+      <label for="code">Код из письма (пришёл на <b id="sentTo"></b>)</label>
+      <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required placeholder="123456">
+      <button class="primary" type="submit">Войти</button>
+      <button class="link" id="backBtn" type="button">Другая почта</button>
+    </form>
+    <p class="msg" id="loginMsg" role="status"></p>
+    <p class="hint">Письмо может попасть в «Спам» или «Промоакции». <a href="install.html">Как установить приложение на телефон</a></p>
+  </section>
+
+  <!-- Приложение -->
+  <div id="app" hidden>
+    <section class="cal" aria-label="Календарь сроков">
+      <div class="cal-top">
+        <button class="nav" id="prevM" type="button" aria-label="Предыдущий месяц">‹</button>
+        <h2 id="monthT"></h2>
+        <button class="nav" id="nextM" type="button" aria-label="Следующий месяц">›</button>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="sched" aria-label="Расписание пар">
+      <div class="sched-top"><h2>Пары</h2><span class="grp">ИМОЗ-24-2</span></div>
+      <div class="wk-nav"><button class="nav" id="prevW" type="button" aria-label="Предыдущая неделя">‹</button><span id="wkT"></span><button class="nav" id="nextW" type="button" aria-label="Следующая неделя">›</button></div>
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <ol class="pairs" id="pairs"></ol>
+    </section>
+
+    <div class="filter" id="filter" hidden><span id="filterT"></span><button id="clearF" type="button">Показать всё</button></div>
+    <main class="sec" id="list"></main>
+    <details class="past" id="pastBox" hidden><summary id="pastT"></summary><div class="sec" id="past"></div></details>
+
+    <footer>
+      <p id="status" role="status">Загрузка…</p>
+      <p><a href="install.html">Установить на телефон</a></p>
+      <details class="acct"><summary>Аккаунт</summary><p><span id="who"></span> · <button class="link" id="logoutBtn" type="button">Выйти</button></p><p class="hint">После выхода для входа снова понадобится код из письма.</p></details>
+    </footer>
+  </div>
+</div>
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
