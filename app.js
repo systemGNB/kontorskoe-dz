@@ -3,7 +3,7 @@
 
 const cfg = window.KDZ_CONFIG;
 const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 
 const MON = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
@@ -382,7 +382,7 @@ $("emailForm").addEventListener("submit", async (ev) => {
   const email = $("email").value.trim().toLowerCase();
   const btn = ev.submitter || $("emailForm").querySelector("button"); btn.disabled = true;
   loginMsg("Отправляем код…");
-  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname } });
   btn.disabled = false;
   if (error) {
     const m = error.message || "";
@@ -393,7 +393,7 @@ $("emailForm").addEventListener("submit", async (ev) => {
   }
   pendingEmail = email; $("sentTo").textContent = email;
   $("emailForm").hidden = true; $("codeForm").hidden = false; $("code").value = ""; $("code").focus();
-  loginMsg("Код отправлен. Он действует около часа.");
+  loginMsg("Письмо отправлено. Введи код из него — или просто нажми ссылку в письме (открой её в этом же браузере).");
 });
 $("codeForm").addEventListener("submit", async (ev) => {
   ev.preventDefault();
@@ -411,6 +411,13 @@ $("logoutBtn").addEventListener("click", async () => {
   await sb.auth.signOut();
   lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); hw = []; books = []; mine = new Set();
 });
+
+// Ошибка из ссылки в письме (например, ссылка устарела).
+if (/error_description=/.test(location.hash)) {
+  const p = new URLSearchParams(location.hash.slice(1));
+  setTimeout(() => loginMsg("Ссылка не сработала: " + (p.get("error_description") || "").replace(/\+/g, " ") + ". Запроси новое письмо.", true), 0);
+  history.replaceState(null, "", location.pathname);
+}
 
 sb.auth.onAuthStateChange((event, session) => {
   const u = session ? session.user : null;
