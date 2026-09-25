@@ -201,6 +201,6 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 
 /* Легенда предметов под календарём — во всю ширину, заметно */
 .legend{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 8px;margin-top:4px}
-.legend span{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;min-width:0;overflow-wrap:anywhere}
-.legend .dot{flex:none;width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--cc)}
+.legend span{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink);line-height:1.2;min-width:0;overflow-wrap:anywhere}
+.legend .dot{flex:none;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1.5px var(--surface),0 0 0 2.5px var(--cc)}
 @media (min-width:560px){.legend{grid-template-columns:repeat(6,1fr)}}
