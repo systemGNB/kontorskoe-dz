@@ -57,14 +57,17 @@ let user = null;
 
 // Постоянные цвета предметов (совпадают с расписанием).
 const COURSE_COLORS = {
-  "Социология маркетинга": "--c1", "ММСИ": "--c2", "ПОСИ-2": "--c3",
-  "Английский": "--c4", "Анализ данных в социологии": "--c5", "Испанский": "--c6",
+  "ПОСИ-2": "posi", "ММСИ": "mmsi", "Испанский": "es",
+  "Английский": "en", "Анализ данных в социологии": "ads", "Социология маркетинга": "mkt",
 };
+/** Цвет заливки предмета (календарь, полоски, галочки). */
 function courseColor(c) {
-  if (COURSE_COLORS[c]) return "var(" + COURSE_COLORS[c] + ")";
+  if (COURSE_COLORS[c]) return "var(--k-" + COURSE_COLORS[c] + ")";
   let h = 0; for (const ch of c) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return "var(--c" + (1 + (h % 7)) + ")";
 }
+/** Цвет текста предмета — темнее заливки, чтобы жёлтый и голубой читались на белом. */
+function courseText(c) { return COURSE_COLORS[c] ? "var(--k-" + COURSE_COLORS[c] + "-t)" : courseColor(c); }
 function badge(due) {
   if (!due) return ["без срока", "bn"];
   const g = gap(due);
@@ -306,7 +309,7 @@ function subjectBlocks(items, box) {
   const blocks = [];
   sorted.forEach((x) => { const last = blocks[blocks.length - 1]; if (last && last.course === x.course) last.list.push(x); else blocks.push({ course: x.course, list: [x] }); });
   blocks.forEach(({ course, list }) => {
-    const sec = el("section", "subj"); sec.style.setProperty("--cc", courseColor(course));
+    const sec = el("section", "subj"); sec.style.setProperty("--cc", courseColor(course)); sec.style.setProperty("--cct", courseText(course));
     const head = el("header", "subj-h"); const cnt = el("span", "cnt");
     const upd = () => { const d = list.filter((x) => mine.has(x.id)).length; cnt.textContent = "сделано " + d + " из " + list.length; sec.classList.toggle("all", d === list.length); renderCal(); };
     head.append(el("h2", null, course), cnt); sec.appendChild(head);
@@ -366,7 +369,7 @@ function renderSched() {
   const list = SCHED[wd] || [];
   if (!list.length) ol.appendChild(el("li", "nopair", "Пар нет"));
   list.forEach((p) => {
-    const li = el("li", "pair"); li.style.setProperty("--cc", p.hw ? courseColor(p.hw) : "var(--line)");
+    const li = el("li", "pair"); li.style.setProperty("--cc", p.hw ? courseColor(p.hw) : "var(--line)"); li.style.setProperty("--cct", p.hw ? courseText(p.hw) : "var(--muted)");
     const tm = el("div", "ptime"); tm.append(el("b", null, p.s), el("span", null, p.e));
     const b = el("div", "pbody"); b.append(el("span", "pname", p.n), el("span", "pmeta", p.t + " · " + p.r), el("span", "pmeta", p.p));
     const due = p.hw ? hw.filter((x) => x.course === p.hw && x.due === schedDate) : [];
@@ -516,7 +519,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "11";
+const APP_VERSION = "12";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
