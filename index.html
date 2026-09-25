@@ -64,8 +64,16 @@
       <ol class="pairs" id="pairs"></ol>
     </section>
 
-    <details class="books" id="booksBox" hidden>
-      <summary>Учебники — открыть любую страницу</summary>
+    <nav class="tools" aria-label="Разделы">
+      <button class="tool" type="button" data-p="booksBox" style="--tc:var(--accent)"><span class="ti">📚</span><span class="tl">Учебники</span><span class="tn" id="booksCnt"></span></button>
+      <button class="tool" type="button" data-p="esBox" style="--tc:var(--k-es)"><span class="ti">🇪🇸</span><span class="tl">Слова: испанский</span><span class="tn" id="esCnt"></span></button>
+      <button class="tool" type="button" data-p="enBox" style="--tc:var(--k-en)"><span class="ti">🇬🇧</span><span class="tl">Слова: английский</span><span class="tn" id="enCnt"></span></button>
+      <button class="tool" type="button" data-p="primBox" style="--tc:var(--k-posi)"><span class="ti">📁</span><span class="tl">Для Примакова</span><span class="tn" id="primCnt"></span></button>
+      <button class="tool" type="button" data-p="matsBox" style="--tc:var(--k-ads)"><span class="ti">✈️</span><span class="tl">Из Telegram</span><span class="tn" id="matsCnt"></span></button>
+    </nav>
+
+    <section class="panel" id="booksBox" hidden>
+      <h3>Учебники — открыть любую страницу</h3>
       <form class="book-form" id="pageForm">
         <select id="bookSel" aria-label="Учебник"></select>
         <input id="pageIn" type="number" inputmode="numeric" min="1" max="999" placeholder="стр." aria-label="Номер страницы" required>
@@ -73,13 +81,31 @@
       </form>
       <div class="book-nav"><button class="nav" id="prevP" type="button" aria-label="Предыдущая страница">‹</button><button class="nav" id="nextP" type="button" aria-label="Следующая страница">›</button></div>
       <div id="bookOut"></div>
-    </details>
+    </section>
 
-    <details class="books" id="matsBox" hidden>
-      <summary>Материалы и лекции из Telegram</summary>
+    <section class="panel vocab" id="esBox" hidden data-lang="es">
+      <h3>Слова: испанский</h3>
+      <div class="vq"><input type="search" placeholder="Поиск слова" aria-label="Поиск слова"><label><input type="checkbox"> Скрыть перевод</label></div>
+      <div class="vout"></div>
+    </section>
+
+    <section class="panel vocab" id="enBox" hidden data-lang="en">
+      <h3>Слова: английский</h3>
+      <div class="vq"><input type="search" placeholder="Search word / поиск" aria-label="Поиск слова"><label><input type="checkbox"> Скрыть перевод</label></div>
+      <div class="vout"></div>
+    </section>
+
+    <section class="panel" id="primBox" hidden>
+      <h3>Материалы для Примакова</h3>
+      <p class="hint">ПОСИ и матстатистика — Примаков В.Л.</p>
+      <div id="primOut"></div>
+    </section>
+
+    <section class="panel" id="matsBox" hidden>
+      <h3>Материалы и лекции из Telegram</h3>
       <input class="mats-q" id="matsQ" type="search" placeholder="Поиск по тексту слайдов и файлам" aria-label="Поиск по материалам">
       <div id="matsOut"></div>
-    </details>
+    </section>
 
     <div class="filter" id="filter" hidden><span id="filterT"></span><button id="clearF" type="button">Показать всё</button></div>
     <main class="sec" id="list"></main>
@@ -87,7 +113,7 @@
 
     <footer>
       <p id="status" role="status">Загрузка…</p>
-      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 12</span></p>
+      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 13</span></p>
       <details class="acct"><summary>Аккаунт</summary><p><span id="who"></span> · <button class="link" id="logoutBtn" type="button">Выйти</button></p><p class="hint">После выхода нужно будет снова ввести логин и пароль.</p></details>
     </footer>
   </div>

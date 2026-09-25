@@ -50,6 +50,8 @@ applyThemeIcon();
 let hw = lsGet("kdz-hw", []);
 let books = lsGet("kdz-books", []);
 let mats = lsGet("kdz-mat", []);
+let vocab = lsGet("kdz-vocab", []);
+let res = lsGet("kdz-res", []);
 let mine = new Set(lsGet("kdz-done", []));
 let sel = null;
 let view = new Date(today + "T00:00:00Z"); view.setUTCDate(1);
@@ -257,9 +259,8 @@ function filterMats() {
   showMats(mats.filter((m) => [m.text, m.caption, m.file_name, m.course].some((v) => (v || "").toLowerCase().includes(q))));
 }
 function renderMatsBox() {
-  const box = $("matsBox"); box.hidden = !mats.length;
-  if (!mats.length) return;
-  if (box.open) filterMats(); else delete box.dataset.loaded;
+  $("matsCnt").textContent = mats.length || "";
+  if (!$("matsBox").hidden) filterMats();
 }
 
 async function toggleDone(id, on, li, cb, onToggle) {
@@ -384,7 +385,7 @@ $("nextW").addEventListener("click", () => { schedDate = addD(schedDate, 7); ren
 
 /* ---------- Отрисовка ---------- */
 function render() {
-  renderCal(); renderSched(); renderBooks(); renderMatsBox();
+  renderCal(); renderSched(); renderBooks(); renderMatsBox(); renderCounts();
   const list = $("list"); list.innerHTML = "";
   if (sel) {
     $("filter").hidden = false; $("filterT").textContent = "Срок: " + human(sel);
@@ -406,9 +407,9 @@ $("clearF").addEventListener("click", () => { sel = null; schedDate = null; rend
 /* ---------- Учебники: любая страница ---------- */
 let vb = null, vp = null;
 function renderBooks() {
-  const box = $("booksBox"), sel2 = $("bookSel");
+  const sel2 = $("bookSel");
   const avail = books.filter((b) => b.pages && Object.keys(b.pages).length);
-  box.hidden = !avail.length;
+  $("booksCnt").textContent = avail.length || "";
   if (!avail.length) return;
   const cur = sel2.value;
   sel2.innerHTML = "";
@@ -435,7 +436,69 @@ function stepPage(d) {
 $("pageForm").addEventListener("submit", (e) => { e.preventDefault(); showBookPage(Number($("pageIn").value)); });
 $("prevP").addEventListener("click", () => stepPage(-1));
 $("nextP").addEventListener("click", () => stepPage(1));
-$("matsBox").addEventListener("toggle", () => { const box = $("matsBox"); if (box.open && !box.dataset.loaded) { box.dataset.loaded = "1"; filterMats(); } });
+/* ---------- Плитки разделов: открыт один раздел за раз ---------- */
+document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", () => {
+  const id = t.dataset.p, panel = $(id), open = panel.hidden;
+  document.querySelectorAll(".panel").forEach((p) => { p.hidden = true; });
+  document.querySelectorAll(".tool").forEach((x) => { x.classList.remove("on"); x.setAttribute("aria-expanded", "false"); });
+  if (!open) return;
+  panel.hidden = false; t.classList.add("on"); t.setAttribute("aria-expanded", "true");
+  if (id === "matsBox") filterMats();
+  if (id === "esBox" || id === "enBox") renderVocab(panel);
+  if (id === "primBox") renderPrim();
+  if (id === "booksBox" && !books.some((b) => b.pages && Object.keys(b.pages).length)) $("bookOut").innerHTML = "<p class='sum'>Учебники ещё загружаются.</p>";
+}));
+
+/* ---------- Слова ---------- */
+function renderVocab(panel) {
+  const lang = panel.dataset.lang, q = panel.querySelector("input[type=search]").value.trim().toLowerCase();
+  const hide = panel.querySelector("input[type=checkbox]").checked, out = panel.querySelector(".vout");
+  out.innerHTML = "";
+  const list = vocab.filter((v) => v.lang === lang && (!q || (v.word + " " + v.translation).toLowerCase().includes(q)));
+  if (!list.length) { out.appendChild(el("p", "sum", q ? "Не найдено." : "Слов пока нет — пришли старосте список или набор из Quizlet.")); return; }
+  let cur = null, ul;
+  list.forEach((v) => {
+    if (v.set_name !== cur) {
+      cur = v.set_name;
+      const h = el("div", "vset"); h.appendChild(el("b", null, v.set_name)); if (v.source) h.appendChild(el("span", null, " · " + v.source));
+      out.appendChild(h); ul = el("ul", "vlist"); out.appendChild(ul);
+    }
+    const li = el("li", "vrow" + (hide ? " hid" : ""));
+    li.append(el("span", "vw", v.word), el("span", "vt", v.translation));
+    if (v.example) li.appendChild(el("span", "vex", v.example));
+    li.addEventListener("click", () => li.classList.toggle("hid"));
+    ul.appendChild(li);
+  });
+}
+document.querySelectorAll(".panel.vocab").forEach((p) => {
+  let t; p.querySelector("input[type=search]").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => renderVocab(p), 200); });
+  p.querySelector("input[type=checkbox]").addEventListener("change", () => renderVocab(p));
+});
+
+/* ---------- Материалы для Примакова ---------- */
+const PRIM_COURSES = ["ПОСИ-2", "Матстатистика"];
+async function renderPrim() {
+  const out = $("primOut"); out.innerHTML = "";
+  const list = res.filter((r) => r.block === "primakov");
+  let urls = [];
+  try { urls = await signedUrls(list.filter((r) => r.path).map((r) => r.path)); } catch (e) {}
+  const byPath = new Map(list.filter((r) => r.path).map((r, i) => [r.path, urls[i]]));
+  list.forEach((r) => {
+    const it = el("div", "mat"); const href = r.path ? byPath.get(r.path) : r.url;
+    if (href) { const a = el("a", null, r.title + " →"); a.href = href; a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
+    else it.appendChild(el("b", null, r.title));
+    if (r.note) it.appendChild(el("p", "sum", r.note));
+    out.appendChild(it);
+  });
+  const tg = mats.filter((m) => PRIM_COURSES.includes(m.course)).slice(0, 15);
+  if (tg.length) { out.appendChild(el("div", "vset", "Из Telegram (ПОСИ, матстатистика)")); const box = el("div"); out.appendChild(box); renderMats(box, tg, true); }
+  if (!list.length && !tg.length) out.appendChild(el("p", "sum", "Пока пусто."));
+}
+function renderCounts() {
+  $("esCnt").textContent = vocab.filter((v) => v.lang === "es").length || "";
+  $("enCnt").textContent = vocab.filter((v) => v.lang === "en").length || "";
+  $("primCnt").textContent = res.filter((r) => r.block === "primakov").length || "";
+}
 let matsT; $("matsQ").addEventListener("input", () => { clearTimeout(matsT); matsT = setTimeout(filterMats, 250); });
 $("bookSel").addEventListener("change", () => { $("bookOut").innerHTML = ""; vb = null; });
 
@@ -447,12 +510,16 @@ async function load() {
   if (!user || loading) return;
   loading = true;
   try {
-    const [h, d, bk, mt] = await Promise.all([
+    const [h, d, bk, mt, vc, rs] = await Promise.all([
       sb.from("homework").select("id,course,title,summary,due,link,telegram,pages").order("due", { ascending: true, nullsFirst: false }),
       sb.from("done").select("homework_id"),
       sb.from("books").select("slug,title,course,aliases,pages"),
       sb.from("materials").select("id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(300),
+      sb.from("vocab").select("lang,set_name,source,word,translation,example,sort").order("sort"),
+      sb.from("resources").select("block,title,note,url,path,sort").order("sort"),
     ]);
+    if (!vc.error) { vocab = vc.data || []; lsSet("kdz-vocab", vocab); }
+    if (!rs.error) { res = rs.data || []; lsSet("kdz-res", res); }
     if (!mt.error) { mats = mt.data || []; lsSet("kdz-mat", mats); }
     if (!bk.error) { books = bk.data || []; lsSet("kdz-books", books); }
     if (h.error) throw h.error;
@@ -507,7 +574,7 @@ $("loginForm").addEventListener("submit", async (ev) => {
 $("logoutBtn").addEventListener("click", async () => {
   if (!confirm("Выйти? Чтобы войти снова, понадобятся логин и пароль.")) return;
   await sb.auth.signOut();
-  lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); lsDel("kdz-mat"); hw = []; books = []; mats = []; mine = new Set();
+  lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); lsDel("kdz-mat"); lsDel("kdz-vocab"); lsDel("kdz-res"); hw = []; books = []; mats = []; vocab = []; res = []; mine = new Set();
 });
 
 sb.auth.onAuthStateChange((event, session) => {
@@ -519,7 +586,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "12";
+const APP_VERSION = "13";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

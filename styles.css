@@ -177,3 +177,26 @@ details.lecture{border-top:1px solid var(--line);padding:10px 0}
 details.lecture>summary{cursor:pointer;font-weight:600}
 details.ocr summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:600}
 details.ocr .sum{white-space:pre-line;margin-top:6px}
+
+/* Плитки разделов */
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+.tool{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:58px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);border-left:4px solid var(--tc);background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.tool .ti{font-size:16px;line-height:1}
+.tool .tl{font-size:12px;font-weight:600;line-height:1.2}
+.tool .tn{position:absolute;top:6px;right:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tool.on{background:var(--tc);border-color:var(--tc);color:#fff;text-shadow:0 0 2px rgba(0,0,0,.45)}
+.tool.on .tn{color:#fff}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:-10px}
+.panel h3{margin:0 0 6px;font-family:var(--display);font-weight:500;font-size:15px}
+.vq{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.vq input[type=search]{flex:1;min-width:140px;font:inherit;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sunk);color:var(--ink)}
+.vq label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.vset{margin-top:10px;font-size:13px;color:var(--muted)}
+.vset b{color:var(--ink)}
+.vlist{list-style:none;margin:4px 0 0;padding:0}
+.vrow{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}
+.vrow:first-child{border-top:0}
+.vw{font-weight:600;overflow-wrap:anywhere}
+.vt{color:var(--muted);overflow-wrap:anywhere}
+.vex{grid-column:1/-1;font-size:13px;color:var(--muted);font-style:italic}
+.vrow.hid .vt,.vrow.hid .vex{filter:blur(6px);user-select:none}
