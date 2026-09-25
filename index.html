@@ -34,19 +34,15 @@
   <!-- Вход -->
   <section class="login" id="login" hidden>
     <h2>Вход</h2>
-    <form id="emailForm">
-      <label for="email">Твоя почта из списка группы</label>
-      <input id="email" type="email" inputmode="email" autocomplete="email" required placeholder="name@gmail.com">
-      <button class="primary" type="submit">Получить код</button>
-    </form>
-    <form id="codeForm" hidden>
-      <label for="code">Код из письма (пришло на <b id="sentTo"></b>). Если в письме только ссылка — нажми её.</label>
-      <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required placeholder="123456">
+    <form id="loginForm">
+      <label for="loginIn">Логин (выдаёт староста)</label>
+      <input id="loginIn" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="например, ivanova">
+      <label for="pass">Пароль</label>
+      <input id="pass" type="password" autocomplete="current-password" required>
       <button class="primary" type="submit">Войти</button>
-      <button class="link" id="backBtn" type="button">Другая почта</button>
     </form>
     <p class="msg" id="loginMsg" role="status"></p>
-    <p class="hint">Письмо может попасть в «Спам» или «Промоакции». <a href="install.html">Как установить приложение на телефон</a></p>
+    <p class="hint">Забыли пароль — напиши старосте. <a href="install.html">Как установить приложение на телефон</a></p>
   </section>
 
   <!-- Приложение -->
@@ -86,7 +82,7 @@
     <footer>
       <p id="status" role="status">Загрузка…</p>
       <p><a href="install.html">Установить на телефон</a></p>
-      <details class="acct"><summary>Аккаунт</summary><p><span id="who"></span> · <button class="link" id="logoutBtn" type="button">Выйти</button></p><p class="hint">После выхода для входа снова понадобится код из письма.</p></details>
+      <details class="acct"><summary>Аккаунт</summary><p><span id="who"></span> · <button class="link" id="logoutBtn" type="button">Выйти</button></p><p class="hint">После выхода нужно будет снова ввести логин и пароль.</p></details>
     </footer>
   </div>
 </div>

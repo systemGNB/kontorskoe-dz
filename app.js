@@ -3,7 +3,7 @@
 
 const cfg = window.KDZ_CONFIG;
 const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
 });
 
 const MON = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
@@ -363,63 +363,38 @@ async function load() {
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(); });
 setInterval(() => { if (document.visibilityState === "visible") load(); }, 5 * 60 * 1000);
 
-/* ---------- Вход по коду ---------- */
-let pendingEmail = "";
+/* ---------- Вход по логину и паролю ---------- */
+// Логин — короткое имя; в Supabase он хранится как «имя@LOGIN_DOMAIN» (не настоящая почта, письма не отправляются).
+const LOGIN_DOMAIN = cfg.loginDomain;
+const toEmail = (login) => { const l = login.trim().toLowerCase(); return l.includes("@") ? l : l + "@" + LOGIN_DOMAIN; };
+const toLogin = (email) => (email || "").endsWith("@" + LOGIN_DOMAIN) ? email.slice(0, -LOGIN_DOMAIN.length - 1) : email || "";
 function loginMsg(t, err) { const m = $("loginMsg"); m.textContent = t || ""; m.classList.toggle("err", !!err); }
 function showLogin() {
   $("login").hidden = false; $("app").hidden = true;
-  $("upd").textContent = "Закрытое приложение группы ИМОЗ-24-2. Вход — по коду на почту.";
+  $("upd").textContent = "Закрытое приложение группы ИМОЗ-24-2.";
 }
 function showApp() {
   $("login").hidden = true; $("app").hidden = false;
   $("upd").textContent = "Пары, сроки сдачи и страницы учебников. Отметки «сделано» видишь только ты.";
-  $("who").textContent = user.email || "";
+  $("who").textContent = toLogin(user.email);
   render(); load();
 }
-
-$("emailForm").addEventListener("submit", async (ev) => {
+$("loginForm").addEventListener("submit", async (ev) => {
   ev.preventDefault();
-  const email = $("email").value.trim().toLowerCase();
-  const btn = ev.submitter || $("emailForm").querySelector("button"); btn.disabled = true;
-  loginMsg("Отправляем код…");
-  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname } });
+  const btn = $("loginForm").querySelector("button"); btn.disabled = true;
+  loginMsg("Входим…");
+  const { error } = await sb.auth.signInWithPassword({ email: toEmail($("loginIn").value), password: $("pass").value });
   btn.disabled = false;
-  if (error) {
-    const m = error.message || "", code = error.code || "";
-    const tech = " (" + [error.status, code, m].filter(Boolean).join(" · ") + ")";
-    if (/списке группы/i.test(m)) loginMsg("Этой почты нет в списке группы. Напиши старосте.", true);
-    else if (code === "email_address_not_authorized" || /not authorized/i.test(m)) loginMsg("Почта для отправки кодов ещё не настроена (нужен SMTP в Supabase)." + tech, true);
-    else if (code === "over_email_send_rate_limit" || /rate|seconds|security purposes/i.test(m) || error.status === 429) loginMsg("Код уже отправлен недавно. Подожди минуту и попробуй снова." + tech, true);
-    else loginMsg("Не получилось отправить код" + tech, true);
-    return;
-  }
-  pendingEmail = email; $("sentTo").textContent = email;
-  $("emailForm").hidden = true; $("codeForm").hidden = false; $("code").value = ""; $("code").focus();
-  loginMsg("Письмо отправлено. Введи код из него — или просто нажми ссылку в письме (открой её в этом же браузере).");
+  if (!error) { loginMsg(""); $("pass").value = ""; return; }
+  if (error.status === 400 || /invalid/i.test(error.message || "")) loginMsg("Неверный логин или пароль.", true);
+  else if (error.status === 429) loginMsg("Слишком много попыток. Подожди пару минут.", true);
+  else loginMsg(navigator.onLine ? "Не получилось войти (" + (error.message || error.status) + ")." : "Нет интернета.", true);
 });
-$("codeForm").addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const token = $("code").value.replace(/\D/g, "");
-  const btn = ev.submitter || $("codeForm").querySelector("button.primary"); btn.disabled = true;
-  loginMsg("Проверяем…");
-  const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
-  btn.disabled = false;
-  if (error) { loginMsg("Код не подошёл или устарел. Проверь цифры или запроси новый.", true); return; }
-  loginMsg("");
-});
-$("backBtn").addEventListener("click", () => { $("codeForm").hidden = true; $("emailForm").hidden = false; loginMsg(""); });
 $("logoutBtn").addEventListener("click", async () => {
-  if (!confirm("Выйти? Чтобы войти снова, понадобится код из письма.")) return;
+  if (!confirm("Выйти? Чтобы войти снова, понадобятся логин и пароль.")) return;
   await sb.auth.signOut();
   lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); hw = []; books = []; mine = new Set();
 });
-
-// Ошибка из ссылки в письме (например, ссылка устарела).
-if (/error_description=/.test(location.hash)) {
-  const p = new URLSearchParams(location.hash.slice(1));
-  setTimeout(() => loginMsg("Ссылка не сработала: " + (p.get("error_description") || "").replace(/\+/g, " ") + ". Запроси новое письмо.", true), 0);
-  history.replaceState(null, "", location.pathname);
-}
 
 sb.auth.onAuthStateChange((event, session) => {
   const u = session ? session.user : null;
