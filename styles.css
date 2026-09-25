@@ -162,3 +162,8 @@ footer p{margin:0}
 .mat-h{font-size:12px;font-weight:600;color:var(--muted);overflow-wrap:anywhere}
 .mat audio{width:100%}
 .mat img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line)}
+.mats-q{width:100%;margin-top:12px;font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sunk);color:var(--ink)}
+details.lecture{border-top:1px solid var(--line);padding:10px 0}
+details.lecture>summary{cursor:pointer;font-weight:600}
+details.ocr summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:600}
+details.ocr .sum{white-space:pre-line;margin-top:6px}

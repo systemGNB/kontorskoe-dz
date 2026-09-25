@@ -200,6 +200,7 @@ async function renderMats(box, list, showCourse) {
     else if (u && m.kind === "photo") { const im = el("img"); im.src = u; im.loading = "lazy"; im.alt = m.caption || "Фото из Telegram"; it.appendChild(im); }
     else if (u) { const a = el("a", null, "Открыть файл →"); a.href = u; a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
     if (m.caption) { const c = el("p", "sum"); c.appendChild(linkify(m.caption)); it.appendChild(c); }
+    if (m.text) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Текст со слайда")); d.appendChild(el("p", "sum", m.text)); it.appendChild(d); }
     if (!u && m.kind !== "link" && m.tg_link) { const a = el("a", null, "Файл большой — открыть в Telegram →"); a.href = m.tg_link; a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
     box.appendChild(it);
   });
@@ -210,11 +211,49 @@ function matsDetails(list, title, showCourse) {
   det.addEventListener("toggle", () => { if (det.open && !det.dataset.loaded) { det.dataset.loaded = "1"; renderMats(det, list, showCourse); } });
   return det;
 }
+/** Лекции (фото одной пары) — одним блоком с общим текстом; остальное — по одному. */
+function matGroups(list) {
+  const groups = [], byKey = new Map();
+  list.forEach((m) => {
+    if (m.lecture) {
+      let g = byKey.get(m.course + "|" + m.lecture);
+      if (!g) { g = { lecture: m.lecture, course: m.course, items: [] }; byKey.set(m.course + "|" + m.lecture, g); groups.push(g); }
+      g.items.push(m);
+    } else groups.push({ items: [m] });
+  });
+  return groups;
+}
+function lectureTitle(g) {
+  const [d, t] = g.lecture.split(" "); const x = new Date(d + "T00:00:00Z");
+  return g.course + " · " + WD[x.getUTCDay()] + ", " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + (/^\d\d:\d\d$/.test(t || "") ? ", " + t : "");
+}
+function showMats(list) {
+  const out = $("matsOut"); out.innerHTML = "";
+  if (!list.length) { out.appendChild(el("p", "sum", "Ничего не найдено.")); return; }
+  const loose = [];
+  const flush = () => { if (loose.length) { const box = el("div"); out.appendChild(box); renderMats(box, loose.splice(0), true); } };
+  matGroups(list).slice(0, 40).forEach((g) => {
+    if (!g.lecture) { loose.push(g.items[0]); return; }
+    flush();
+    const items = g.items.slice().sort((a, c) => Date.parse(a.posted_at) - Date.parse(c.posted_at));
+    const sec = el("details", "lecture");
+    sec.appendChild(el("summary", null, lectureTitle(g) + " — " + items.length + " фото"));
+    const all = items.map((m) => m.text).filter(Boolean).join("\n\n— — —\n\n");
+    if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
+    sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderMats(sec, items, false); } });
+    out.appendChild(sec);
+  });
+  flush();
+}
+function filterMats() {
+  const q = $("matsQ").value.trim().toLowerCase();
+  if (!q) { showMats(mats); return; }
+  showMats(mats.filter((m) => [m.text, m.caption, m.file_name, m.course].some((v) => (v || "").toLowerCase().includes(q))));
+}
 function renderMatsBox() {
   const box = $("matsBox"); box.hidden = !mats.length;
   if (!mats.length) return;
-  const out = $("matsOut"); out.innerHTML = ""; delete box.dataset.loaded;
-  if (box.open) { box.dataset.loaded = "1"; renderMats(out, mats.slice(0, 30), true); }
+  if (box.open) filterMats(); else delete box.dataset.loaded;
 }
 
 async function toggleDone(id, on, li, cb, onToggle) {
@@ -387,7 +426,8 @@ function stepPage(d) {
 $("pageForm").addEventListener("submit", (e) => { e.preventDefault(); showBookPage(Number($("pageIn").value)); });
 $("prevP").addEventListener("click", () => stepPage(-1));
 $("nextP").addEventListener("click", () => stepPage(1));
-$("matsBox").addEventListener("toggle", () => { const box = $("matsBox"); if (box.open && !box.dataset.loaded) { box.dataset.loaded = "1"; renderMats($("matsOut"), mats.slice(0, 30), true); } });
+$("matsBox").addEventListener("toggle", () => { const box = $("matsBox"); if (box.open && !box.dataset.loaded) { box.dataset.loaded = "1"; filterMats(); } });
+let matsT; $("matsQ").addEventListener("input", () => { clearTimeout(matsT); matsT = setTimeout(filterMats, 250); });
 $("bookSel").addEventListener("change", () => { $("bookOut").innerHTML = ""; vb = null; });
 
 function setStatus(t) { $("status").textContent = t; }
@@ -402,7 +442,7 @@ async function load() {
       sb.from("homework").select("id,course,title,summary,due,link,telegram,pages").order("due", { ascending: true, nullsFirst: false }),
       sb.from("done").select("homework_id"),
       sb.from("books").select("slug,title,course,aliases,pages"),
-      sb.from("materials").select("id,course,kind,file_name,caption,path,duration,posted_at,tg_link").order("posted_at", { ascending: false }).limit(300),
+      sb.from("materials").select("id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(300),
     ]);
     if (!mt.error) { mats = mt.data || []; lsSet("kdz-mat", mats); }
     if (!bk.error) { books = bk.data || []; lsSet("kdz-books", books); }
