@@ -85,15 +85,18 @@ function renderCal() {
     const d = new Date(start); d.setUTCDate(start.getUTCDate() + i); const ds = iso(d);
     if (i >= 35 && d.getUTCMonth() !== view.getUTCMonth()) break;
     const items = hw.filter((x) => x.due === ds);
-    const b = el("button", "day" + (d.getUTCMonth() !== view.getUTCMonth() ? " out" : "") + (ds === today ? " today" : "") + (ds === sel ? " sel" : ""));
+    // Один цвет на предмет: весь квадратик закрашен, при нескольких предметах — поделён на полосы.
+    const courses = [...new Set(items.map((x) => x.course))].sort((a, c) => a.localeCompare(c, "ru"));
+    const allDone = items.length && items.every((x) => mine.has(x.id));
+    const b = el("button", "day" + (d.getUTCMonth() !== view.getUTCMonth() ? " out" : "") + (ds === today ? " today" : "") + (ds === sel ? " sel" : "") + (courses.length ? " due" : "") + (allDone ? " done" : ""));
     b.type = "button";
-    b.setAttribute("aria-label", human(ds) + (items.length ? ": сдать " + items.length : ""));
-    b.appendChild(el("span", "n", String(d.getUTCDate())));
-    if (items.length) {
-      const dots = el("span", "dots");
-      items.forEach((x) => { const s = el("span", "dot"); s.style.setProperty("--cc", courseColor(x.course)); s.title = x.course; dots.appendChild(s); });
-      b.appendChild(dots);
+    b.setAttribute("aria-label", human(ds) + (items.length ? ": сдать " + items.length + " (" + courses.join(", ") + ")" + (allDone ? ", всё сделано" : "") : ""));
+    if (courses.length) {
+      const step = 100 / courses.length;
+      b.style.background = "linear-gradient(90deg," + courses.map((c, k) => courseColor(c) + " " + (k * step).toFixed(2) + "% " + ((k + 1) * step).toFixed(2) + "%").join(",") + ")";
+      b.title = courses.join(", ");
     }
+    b.appendChild(el("span", "n", String(d.getUTCDate())));
     b.addEventListener("click", () => { sel = sel === ds ? null : ds; schedDate = null; render(); });
     g.appendChild(b);
   }
@@ -296,14 +299,16 @@ function taskRow(x, onToggle) {
 }
 
 function subjectBlocks(items, box) {
-  const by = {};
-  items.forEach((x) => (by[x.course] = by[x.course] || []).push(x));
-  const key = (l) => Math.min(...l.map((x) => (x.due ? gap(x.due) : 999)));
-  Object.entries(by).sort((a, b) => key(a[1]) - key(b[1]) || a[0].localeCompare(b[0], "ru")).forEach(([course, list]) => {
-    list.sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999") || a.title.localeCompare(b.title, "ru"));
+  // Порядок — по близости срока; подряд идущие задания одного предмета объединяются в одну карточку.
+  // Если у предмета несколько сроков, а между ними есть другие предметы, — это отдельные карточки на своих местах.
+  const key = (x) => x.due || "9999-99-99";
+  const sorted = items.slice().sort((a, b) => key(a).localeCompare(key(b)) || a.course.localeCompare(b.course, "ru") || a.title.localeCompare(b.title, "ru"));
+  const blocks = [];
+  sorted.forEach((x) => { const last = blocks[blocks.length - 1]; if (last && last.course === x.course) last.list.push(x); else blocks.push({ course: x.course, list: [x] }); });
+  blocks.forEach(({ course, list }) => {
     const sec = el("section", "subj"); sec.style.setProperty("--cc", courseColor(course));
     const head = el("header", "subj-h"); const cnt = el("span", "cnt");
-    const upd = () => { const d = list.filter((x) => mine.has(x.id)).length; cnt.textContent = "сделано " + d + " из " + list.length; sec.classList.toggle("all", d === list.length); };
+    const upd = () => { const d = list.filter((x) => mine.has(x.id)).length; cnt.textContent = "сделано " + d + " из " + list.length; sec.classList.toggle("all", d === list.length); renderCal(); };
     head.append(el("h2", null, course), cnt); sec.appendChild(head);
     const dates = [...new Set(list.map((x) => x.due || ""))];
     if (dates.length === 1) {
@@ -314,7 +319,8 @@ function subjectBlocks(items, box) {
       g.appendChild(dueLine(its[0]));
       const ul = el("ul", "rows"); its.forEach((x) => ul.appendChild(taskRow(x, upd))); g.appendChild(ul); sec.appendChild(g);
     });
-    upd(); box.appendChild(sec);
+    const d0 = list.filter((x) => mine.has(x.id)).length; cnt.textContent = "сделано " + d0 + " из " + list.length; sec.classList.toggle("all", d0 === list.length);
+    box.appendChild(sec);
   });
 }
 
