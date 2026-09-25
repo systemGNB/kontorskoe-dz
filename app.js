@@ -385,10 +385,12 @@ $("emailForm").addEventListener("submit", async (ev) => {
   const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname } });
   btn.disabled = false;
   if (error) {
-    const m = error.message || "";
-    if (/списке|403|not allowed|hook/i.test(m) || error.status === 403 || error.status === 422) loginMsg("Этой почты нет в списке группы. Напиши старосте.", true);
-    else if (/rate|seconds|security purposes/i.test(m) || error.status === 429) loginMsg("Код уже отправлен недавно. Подожди минуту и попробуй снова.", true);
-    else loginMsg("Не получилось отправить код: " + m, true);
+    const m = error.message || "", code = error.code || "";
+    const tech = " (" + [error.status, code, m].filter(Boolean).join(" · ") + ")";
+    if (/списке группы/i.test(m)) loginMsg("Этой почты нет в списке группы. Напиши старосте.", true);
+    else if (code === "email_address_not_authorized" || /not authorized/i.test(m)) loginMsg("Почта для отправки кодов ещё не настроена (нужен SMTP в Supabase)." + tech, true);
+    else if (code === "over_email_send_rate_limit" || /rate|seconds|security purposes/i.test(m) || error.status === 429) loginMsg("Код уже отправлен недавно. Подожди минуту и попробуй снова." + tech, true);
+    else loginMsg("Не получилось отправить код" + tech, true);
     return;
   }
   pendingEmail = email; $("sentTo").textContent = email;
