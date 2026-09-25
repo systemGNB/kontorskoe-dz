@@ -1,6 +1,6 @@
 // Офлайн-кэш оболочки приложения. Данные (Supabase) не кэшируются здесь —
 // последняя версия заданий хранится в localStorage приложения.
-const CACHE = "kdz-v10";
+const CACHE = "kdz-v11";
 const SHELL = ["./", "index.html", "styles.css", "app.js", "config.js", "vendor/supabase.js",
   "install.html", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
 
@@ -28,7 +28,8 @@ self.addEventListener("fetch", (e) => {
   }
   if (url.origin !== location.origin) return;
   // Свои файлы: сначала сеть (чтобы обновления приходили сразу), без сети — кэш.
-  e.respondWith(fetch(req).then((res) => {
+  // cache: "no-cache" — всегда сверяемся с сервером, чтобы обновления приходили сразу, а не через 10 минут.
+  e.respondWith(fetch(req, { cache: "no-cache" }).then((res) => {
     if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
     return res;
   }).catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || caches.match("index.html"))));

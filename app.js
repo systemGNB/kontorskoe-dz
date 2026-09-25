@@ -516,6 +516,17 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
+const APP_VERSION = "11";
+$("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+      // Проверяем обновления при каждом открытии приложения.
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+      // Новая версия установилась — один раз перезагружаем страницу.
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => { if (!reloaded) { reloaded = true; location.reload(); } });
+    } catch (e) {}
+  });
 }
