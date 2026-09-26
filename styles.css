@@ -278,3 +278,5 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .dcard.on::after{transform:translateY(-50%) rotate(90deg)}
 #dailyBody{display:flex;flex-direction:column;gap:6px}
 #dailyBody[hidden]{display:none}
+.dlist.age3 .dword{background:transparent;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));padding:5px 10px;font-size:14px}
+.dlist.age3 .dword .vw{font-weight:600}

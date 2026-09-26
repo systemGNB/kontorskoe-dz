@@ -534,9 +534,9 @@ document.querySelectorAll(".panel.vocab").forEach((p) => {
 });
 
 
-/* ---------- Слова на сегодня: 10 слов — 5 новых и 5 вчерашних на повторение ---------- */
+/* ---------- Повтори слова: 15 слов на язык — 5 новых, 5 вчерашних, 5 позавчерашних; плюс пара случайных из пройденного ---------- */
 // День считается от личной даты старта (хранится в профиле пользователя — одинаково на телефоне и ноутбуке).
-const DAILY_NEW = 5, WINDOW_DAYS = 2;
+const DAILY_NEW = 5, WINDOW_DAYS = 3, DAILY_RANDOM = 3;
 let dailyLang = "es", dailyOpen = null;
 try { dailyLang = localStorage.getItem("kdz-daily-lang") || "es"; } catch (e) {}
 function vocabStart() {
@@ -553,7 +553,7 @@ function dayIndex() {
   return Math.max(0, Math.round((Date.parse(today + "T00:00:00Z") - Date.parse(st + "T00:00:00Z")) / DAY));
 }
 function langWords(lang) { return vocab.filter((v) => v.lang === lang && !/^auto:/.test(v.id || "")); }
-/** Слова окна: [сегодняшние 5, вчерашние 5]. Когда слова заканчиваются — начинаем круг заново. */
+/** Слова окна: [сегодняшние 5, вчерашние 5, позавчерашние 5] + случайные из уже ушедших. Когда слова заканчиваются — начинаем круг заново. */
 function dailyWindow(lang) {
   const all = langWords(lang); if (!all.length) return [];
   const n = dayIndex(), groups = [];
@@ -561,6 +561,15 @@ function dailyWindow(lang) {
     const start = ((n - k) * DAILY_NEW) % all.length;
     const g = []; for (let i = 0; i < DAILY_NEW && i < all.length; i++) g.push(all[(start + i) % all.length]);
     groups.push({ age: k, words: g });
+  }
+  // Уже ушедшие из окна слова иногда возвращаются: каждый день свои (случайно, но одинаково на всех устройствах).
+  const passed = Math.min(all.length, Math.max(0, (n - WINDOW_DAYS + 1) * DAILY_NEW));
+  if (passed > 0) {
+    let seed = 0; for (const c of today + lang) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const picked = new Set();
+    while (picked.size < Math.min(DAILY_RANDOM, passed)) picked.add(Math.floor(rnd() * passed));
+    groups.push({ age: 3, words: [...picked].map((i) => all[i]) });
   }
   return groups;
 }
@@ -590,7 +599,7 @@ function renderDaily() {
   const body = $("dailyBody"); body.hidden = !dailyOpen;
   if (!dailyOpen) return;
   const out = $("dailyOut"); out.innerHTML = "";
-  const labels = ["Новые сегодня", "Со вчера — повтори"];
+  const labels = ["Новые сегодня", "Со вчера — повтори", "Позавчера — последний раз", "Из пройденного — вспомни"];
   dailyWindow(dailyOpen).forEach((g) => {
     out.appendChild(el("div", "dage", labels[g.age]));
     const ul = el("ul", "dlist age" + g.age);
@@ -748,7 +757,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "38";
+const APP_VERSION = "39";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
