@@ -687,6 +687,47 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) setT
 
 /* ---------- Материалы для Примакова ---------- */
 const PRIM_COURSES = ["ПОСИ-2", "Матстатистика"];
+/** Слайды лекции — компактной сеткой миниатюр; нажатие открывает слайд на весь экран (листать ‹ ›). */
+async function renderSlides(box, items) {
+  let urls = [];
+  try { urls = await signedUrls(items.map((m) => m.path).filter(Boolean)); } catch (e) {}
+  const byPath = new Map(items.filter((m) => m.path).map((m, i) => [m.path, urls[i]]));
+  const grid = el("div", "slides");
+  items.forEach((m, i) => {
+    const b = el("button", "slide"); b.type = "button";
+    const u = m.path ? byPath.get(m.path) : "";
+    if (u) { const im = el("img"); im.src = u; im.loading = "lazy"; im.alt = "Слайд " + (i + 1); b.appendChild(im); }
+    else b.appendChild(el("span", "slide-na", "нет фото"));
+    b.appendChild(el("span", "slide-n", String(i + 1)));
+    b.addEventListener("click", () => openSlide(items, byPath, i));
+    grid.appendChild(b);
+  });
+  box.appendChild(grid);
+}
+function openSlide(items, byPath, i) {
+  let v = $("slideView");
+  if (!v) { v = el("div", "slideview"); v.id = "slideView"; document.body.appendChild(v); }
+  const show = (k) => {
+    i = (k + items.length) % items.length; const m = items[i];
+    v.innerHTML = "";
+    const bar = el("div", "sv-bar");
+    const prev = el("button", "sv-btn", "‹"), next = el("button", "sv-btn", "›"), close = el("button", "sv-btn", "✕");
+    [prev, next, close].forEach((x) => { x.type = "button"; });
+    bar.append(prev, el("span", "sv-t", "Слайд " + (i + 1) + " из " + items.length), next, close);
+    v.appendChild(bar);
+    const u = m.path ? byPath.get(m.path) : "";
+    if (u) { const im = el("img", "sv-img"); im.src = u; im.alt = "Слайд " + (i + 1); v.appendChild(im); }
+    if (m.text) { const d = el("details", "ocr sv-ocr"); d.appendChild(el("summary", null, "Текст со слайда")); d.appendChild(el("p", "sum", m.text)); v.appendChild(d); }
+    prev.onclick = () => show(i - 1); next.onclick = () => show(i + 1);
+    close.onclick = () => { v.hidden = true; document.body.classList.remove("noscroll"); };
+  };
+  v.hidden = false; document.body.classList.add("noscroll"); show(i);
+}
+document.addEventListener("keydown", (e) => {
+  const v = $("slideView"); if (!v || v.hidden) return;
+  const b = v.querySelectorAll(".sv-btn");
+  if (e.key === "ArrowLeft") b[0].click(); else if (e.key === "ArrowRight") b[1].click(); else if (e.key === "Escape") b[2].click();
+});
 /** Лекции предмета: фото из его темы в «Конторском ДЗ». Дата — из сообщения-метки перед фото («20.09»),
  *  без метки — день пересылки. Разделы по датам, внутри — слайды с распознанным текстом. */
 function renderLectures(out, course) {
@@ -706,7 +747,7 @@ function renderLectures(out, course) {
       sec.appendChild(el("summary", null, "Лекция " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + " — " + g.items.length + " фото"));
       const all = g.items.map((m, k) => m.text ? "Слайд " + (k + 1) + "\n" + m.text : "").filter(Boolean).join("\n\n— — —\n\n");
       if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
-      sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderMats(sec, g.items, false, true); } });
+      sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderSlides(sec, g.items); } });
       out.appendChild(sec);
     });
   }
@@ -843,7 +884,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "59";
+const APP_VERSION = "60";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
