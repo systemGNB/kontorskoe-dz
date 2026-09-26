@@ -319,7 +319,7 @@ function taskRow(x, onToggle) {
     const tm = taskMaterials(x);
     if (tm.length) b.appendChild(matsDetails(tm, "Материалы из Telegram", false));
   }
-  if (x.link) { const a = el("a", null, "Открыть в Google Классе →"); a.href = x.link; a.target = "_blank"; a.rel = "noopener"; b.appendChild(a); }
+  if (x.link) { const a = el("a", null, /t\.me\//.test(x.link) ? "Открыть сообщение в Telegram →" : "Открыть в Google Классе →"); a.href = x.link; a.target = "_blank"; a.rel = "noopener"; b.appendChild(a); }
   li.append(cell, b);
   return li;
 }
@@ -601,7 +601,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "27";
+const APP_VERSION = "28";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
