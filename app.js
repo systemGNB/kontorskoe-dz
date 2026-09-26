@@ -594,7 +594,25 @@ function dailyWindow(lang) {
   }
   return groups;
 }
-document.addEventListener("click", () => document.querySelectorAll("#dailyOut .dword:not(.hid)").forEach((x) => x.classList.add("hid")));
+// Перевод всегда появляется в одном месте — в плашке внизу экрана. Сами слова не двигаются.
+var wordBar = el("div", "wordbar"); wordBar.hidden = true; wordBar.setAttribute("role", "status");
+document.body.appendChild(wordBar);
+wordBar.addEventListener("click", (ev) => { ev.stopPropagation(); hideWordBar(); });
+function hideWordBar() {
+  wordBar.hidden = true;
+  document.querySelectorAll("#dailyOut .dword:not(.hid)").forEach((x) => x.classList.add("hid"));
+}
+function showWordBar(li, v) {
+  hideWordBar();
+  li.classList.remove("hid");
+  wordBar.innerHTML = "";
+  const x = el("span", "wbx", "✕");
+  wordBar.append(el("span", "vw", v.word), el("span", "vt", v.translation));
+  if (v.example) wordBar.appendChild(el("span", "vex", v.example));
+  wordBar.appendChild(x);
+  wordBar.hidden = false;
+}
+document.addEventListener("click", () => { if (!wordBar.hidden) hideWordBar(); });
 function renderDaily() {
   const box = $("dailyBox"); if (!box) return;
   const langs = ["es", "en"].filter((l) => langWords(l).length);
@@ -619,6 +637,7 @@ function renderDaily() {
     cards.appendChild(b);
   });
   const body = $("dailyBody"); body.hidden = !dailyOpen;
+  if (typeof wordBar !== "undefined") wordBar.hidden = true;
   if (!dailyOpen) return;
   const out = $("dailyOut"); out.innerHTML = "";
   // 10 новых (сегодняшние 5 + вчерашние 5) · 5 старых (позавчерашние, последний день) · 3 давно изученных.
@@ -633,23 +652,11 @@ function renderDaily() {
     g.words.forEach((v) => {
       // Видно только испанское слово; перевод, тема и пример — по нажатию.
       const li = el("li", "dword hid");
-      // Перевод и пример — во всплывающей подсказке под словом: сами слова не сдвигаются.
-      const pop = el("span", "dpop");
-      pop.append(el("span", "vt", v.translation));
-      if (v.example) pop.appendChild(el("span", "vex", v.example));
-      li.append(el("span", "vw", v.word), pop);
-      li.title = "Нажми, чтобы показать/скрыть перевод";
+      li.appendChild(el("span", "vw", v.word));
+      li.title = "Нажми, чтобы увидеть перевод";
       li.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        // Открыта одна подсказка за раз: предыдущая закрывается сама.
-        const open = li.classList.contains("hid");
-        out.querySelectorAll(".dword:not(.hid)").forEach((x) => x.classList.add("hid"));
-        li.classList.toggle("hid", !open);
-        if (open) {
-          // Подсказка не вылезает за край блока: у правого края прижимаем её вправо.
-          const box = out.getBoundingClientRect(), r = li.getBoundingClientRect();
-          li.classList.toggle("pright", r.left + 280 > box.right && r.right - 280 >= box.left - 20);
-        }
+        if (li.classList.contains("hid")) showWordBar(li, v); else hideWordBar();
       });
       ul.appendChild(li);
     });
@@ -798,7 +805,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "54";
+const APP_VERSION = "55";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

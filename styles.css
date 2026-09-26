@@ -352,3 +352,11 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 :root[data-theme="dark"] .daily h2 .dnote{color:rgba(255,255,255,.75)}
 :root[data-theme="dark"] .daily .dcard{background:rgba(15,14,30,.55)}
 :root[data-theme="dark"] .daily .hint,:root[data-theme="dark"] .daily .dage{color:rgba(255,255,255,.75)}
+/* Перевод — всегда в одном месте: плашка внизу экрана */
+.wordbar{position:fixed;z-index:50;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 14px;border-radius:16px;background:var(--surface);color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.25),0 0 0 2px var(--accent);cursor:pointer;animation:wbin .15s ease-out}
+.wordbar[hidden]{display:none}
+.wordbar .vw{grid-column:1;font-size:18px;font-weight:700}
+.wordbar .vt{grid-column:1;font-size:15px;font-weight:600;color:var(--accent)}
+.wordbar .vex{grid-column:1;font-size:14px;font-style:italic;color:var(--ink);opacity:.8}
+.wordbar .wbx{grid-column:2;grid-row:1;align-self:start;font-size:14px;color:var(--muted);padding:2px 4px}
+@keyframes wbin{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
