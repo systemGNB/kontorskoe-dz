@@ -300,3 +300,9 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .vgrp>summary{flex-wrap:nowrap;align-items:center;gap:10px}
 .vgrp>summary b{flex:1;min-width:0;line-height:1.25}
 .vgrp>summary .vcnt{margin-left:0}
+/* Открытое слово: перевод и пример крупно и ярко, чтобы запоминались */
+#dailyOut .dword:not(.hid) .vt{color:var(--accent);font-weight:700;font-size:17px;line-height:1.3}
+#dailyOut .dword:not(.hid) .vex{color:var(--ink);font-size:15px;line-height:1.4;font-style:italic;opacity:.9}
+#dailyOut .dword:not(.hid){background:var(--surface);box-shadow:0 0 0 2px var(--accent) inset}
+.vrow:not(.hid) .vt{color:var(--accent);font-weight:600}
+.vrow:not(.hid) .vex{color:var(--ink);font-size:14px;opacity:.85}

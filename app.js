@@ -767,7 +767,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "43";
+const APP_VERSION = "44";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
