@@ -60,7 +60,7 @@ let user = null;
 // Постоянные цвета предметов (совпадают с расписанием).
 const COURSE_COLORS = {
   "ПОСИ-2": "posi", "ММСИ": "mmsi", "Испанский": "es",
-  "Английский": "en", "Анализ данных в социологии": "ads", "Социология маркетинга": "mkt",
+  "Английский": "en", "Анализ данных в социологии": "ads", "Социология маркетинга": "mkt", "Политическая социология": "pol",
 };
 /** Цвет заливки предмета (календарь, полоски, галочки). */
 function courseColor(c) {
@@ -471,6 +471,7 @@ document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", ()
   if (id === "esBox" || id === "enBox") renderVocab(panel);
   if (id === "primBox") renderPrim();
   if (id === "booksBox") renderBookLinks();
+  if (panel.dataset.course) renderCourse(panel);
 }));
 // Учебники, Примаков и «Вся лексика» сворачиваются сами, когда их пролистали вниз к заданиям.
 // Экран при этом не прыгает: задания остаются там же, где были.
@@ -686,6 +687,39 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) setT
 
 /* ---------- Материалы для Примакова ---------- */
 const PRIM_COURSES = ["ПОСИ-2", "Матстатистика"];
+/** Лекции предмета: фото из его темы в «Конторском ДЗ». Дата — из сообщения-метки перед фото («20.09»),
+ *  без метки — день пересылки. Разделы по датам, внутри — слайды с распознанным текстом. */
+function renderLectures(out, course) {
+  const photos = mats.filter((m) => m.course === course && m.kind === "photo").sort((x, y) => Date.parse(x.posted_at) - Date.parse(y.posted_at));
+  const byDay = new Map();
+  photos.forEach((m) => {
+    const d = /^\d{4}-\d\d-\d\d$/.test(m.lecture || "") ? m.lecture : new Date(Date.parse(m.posted_at) + 3 * 3600000).toISOString().slice(0, 10);
+    if (!byDay.has(d)) byDay.set(d, { day: d, items: [] });
+    byDay.get(d).items.push(m);
+  });
+  const days = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+  if (days.length) {
+    out.appendChild(el("div", "vset", "Лекции"));
+    days.forEach((g) => {
+      const x = new Date(g.day + "T00:00:00Z");
+      const sec = el("details", "lecture");
+      sec.appendChild(el("summary", null, "Лекция " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + " — " + g.items.length + " фото"));
+      const all = g.items.map((m, k) => m.text ? "Слайд " + (k + 1) + "\n" + m.text : "").filter(Boolean).join("\n\n— — —\n\n");
+      if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
+      sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderMats(sec, g.items, false, true); } });
+      out.appendChild(sec);
+    });
+  }
+  return days;
+}
+/** Плитка предмета (ММСИ, маркетинг, анализ данных, политсоц): лекции + прочие файлы из Telegram. */
+function renderCourse(panel) {
+  const course = panel.dataset.course, out = panel.querySelector(".cout"); out.innerHTML = "";
+  const days = renderLectures(out, course);
+  const files = mats.filter((m) => m.course === course && m.kind !== "photo").slice(0, 30);
+  if (files.length) { out.appendChild(el("div", "vset", "Файлы и ссылки")); const box = el("div"); out.appendChild(box); renderMats(box, files, false); }
+  if (!days.length && !files.length) out.appendChild(el("p", "sum", "Пока пусто — перешли фото и файлы в тему «" + panel.querySelector("h3").textContent + "» группы «Конторское ДЗ»."));
+}
 async function renderPrim() {
   const out = $("primOut"); out.innerHTML = "";
   const list = res.filter((r) => r.block === "primakov");
@@ -699,28 +733,7 @@ async function renderPrim() {
     if (r.note) it.appendChild(el("p", "sum", r.note));
     out.appendChild(it);
   });
-  // Лекции: фото из темы «ПОСИ» группы «Конторское ДЗ». Дата — из сообщения-метки перед фото («20.09»),
-  // без метки — день пересылки. Разделы идут по датам.
-  const photos = mats.filter((m) => m.course === "ПОСИ-2" && m.kind === "photo").sort((x, y) => Date.parse(x.posted_at) - Date.parse(y.posted_at));
-  const byDay = new Map();
-  photos.forEach((m) => {
-    const d = /^\d{4}-\d\d-\d\d$/.test(m.lecture || "") ? m.lecture : new Date(Date.parse(m.posted_at) + 3 * 3600000).toISOString().slice(0, 10);
-    if (!byDay.has(d)) byDay.set(d, { day: d, items: [] });
-    byDay.get(d).items.push(m);
-  });
-  const days = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
-  if (days.length) {
-    out.appendChild(el("div", "vset", "Лекции"));
-    days.forEach((g, i) => {
-      const x = new Date(g.day + "T00:00:00Z");
-      const sec = el("details", "lecture");
-      sec.appendChild(el("summary", null, "Лекция " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + " — " + g.items.length + " фото"));
-      const all = g.items.map((m, k) => m.text ? "Слайд " + (k + 1) + "\n" + m.text : "").filter(Boolean).join("\n\n— — —\n\n");
-      if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
-      sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderMats(sec, g.items, false, true); } });
-      out.appendChild(sec);
-    });
-  }
+  const days = renderLectures(out, "ПОСИ-2");
   const tg = mats.filter((m) => PRIM_COURSES.includes(m.course) && !(m.course === "ПОСИ-2" && m.kind === "photo")).slice(0, 15);
   if (tg.length) { out.appendChild(el("div", "vset", "Файлы из Telegram (ПОСИ, матстатистика)")); const box = el("div"); out.appendChild(box); renderMats(box, tg, true); }
   if (!list.length && !tg.length && !days.length) out.appendChild(el("p", "sum", "Пока пусто."));
@@ -728,7 +741,8 @@ async function renderPrim() {
 function renderCounts() {
   $("esCnt").textContent = vocab.filter((v) => v.lang === "es").length || "";
   $("enCnt").textContent = vocab.filter((v) => v.lang === "en").length || "";
-  $("primCnt").textContent = res.filter((r) => r.block === "primakov").length || "";
+  $("primCnt").textContent = (res.filter((r) => r.block === "primakov").length + mats.filter((m) => m.course === "ПОСИ-2").length) || "";
+  document.querySelectorAll("[data-cnt]").forEach((x) => { x.textContent = mats.filter((m) => m.course === x.dataset.cnt).length || ""; });
 }
 
 function setStatus(t) { $("status").textContent = t; }
@@ -829,7 +843,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "58";
+const APP_VERSION = "59";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

@@ -74,17 +74,38 @@
     </section>
 
     <nav class="tools" aria-label="Разделы">
-      <button class="tool" type="button" data-p="esBox" style="--tc:var(--k-es)"><span class="ti">🇪🇸</span><span class="tl">Вся лексика: испанский</span><span class="tn" id="esCnt"></span></button>
-      <button class="tool" type="button" data-p="enBox" style="--tc:var(--k-en)"><span class="ti">🇬🇧</span><span class="tl">Вся лексика: английский</span><span class="tn" id="enCnt"></span></button>
-      <button class="tool" type="button" data-p="booksBox" style="--tc:var(--accent)"><span class="ti">📚</span><span class="tl">Учебники</span><span class="tn" id="booksCnt"></span></button>
-      <button class="tool" type="button" data-p="primBox" style="--tc:var(--k-posi)"><span class="ti">📁</span><span class="tl">Для Примакова</span><span class="tn" id="primCnt"></span></button>
+      <button class="tool" type="button" data-p="booksBox" style="--tc:var(--accent)"><span class="ti">📚</span><span class="tl">Учебники по языкам</span><span class="tn" id="booksCnt"></span></button>
+      <button class="tool" type="button" data-p="primBox" style="--tc:var(--k-posi)"><span class="ti">📁</span><span class="tl">Примаков (ПОСИ)</span><span class="tn" id="primCnt"></span></button>
+      <button class="tool" type="button" data-p="mmsiBox" style="--tc:var(--k-mmsi)"><span class="ti">📐</span><span class="tl">ММСИ</span><span class="tn" data-cnt="ММСИ"></span></button>
+      <button class="tool" type="button" data-p="mktBox" style="--tc:var(--k-mkt)"><span class="ti">🛍️</span><span class="tl">Социология маркетинга</span><span class="tn" data-cnt="Социология маркетинга"></span></button>
+      <button class="tool" type="button" data-p="adsBox" style="--tc:var(--k-ads)"><span class="ti">📊</span><span class="tl">Анализ данных</span><span class="tn" data-cnt="Анализ данных в социологии"></span></button>
+      <button class="tool" type="button" data-p="polBox" style="--tc:var(--k-pol)"><span class="ti">🏛️</span><span class="tl">Политическая социология</span><span class="tn" data-cnt="Политическая социология"></span></button>
     </nav>
 
     <section class="panel" id="booksBox" hidden>
-      <h3>Учебники</h3>
+      <h3>Учебники по языкам</h3>
       <div id="bookOut"></div>
     </section>
 
+    <section class="panel" id="primBox" hidden>
+      <h3>Примаков</h3>
+      <p class="hint">ПОСИ и матстатистика — Примаков В.Л.</p>
+      <div id="primOut"></div>
+    </section>
+    <section class="panel" id="mmsiBox" hidden data-course="ММСИ"><h3>ММСИ</h3><div class="cout"></div></section>
+    <section class="panel" id="mktBox" hidden data-course="Социология маркетинга"><h3>Социология маркетинга</h3><div class="cout"></div></section>
+    <section class="panel" id="adsBox" hidden data-course="Анализ данных в социологии"><h3>Анализ данных</h3><div class="cout"></div></section>
+    <section class="panel" id="polBox" hidden data-course="Политическая социология"><h3>Политическая социология</h3><div class="cout"></div></section>
+
+
+    <div class="filter" id="filter" hidden><span id="filterT"></span><button id="clearF" type="button">Показать всё</button></div>
+    <main class="sec" id="list"></main>
+    <details class="past" id="pastBox" hidden><summary id="pastT"></summary><div class="sec" id="past"></div></details>
+
+    <nav class="tools tools-bottom" aria-label="Вся лексика">
+      <button class="tool" type="button" data-p="esBox" style="--tc:var(--k-es)"><span class="ti">🇪🇸</span><span class="tl">Вся лексика: испанский</span><span class="tn" id="esCnt"></span></button>
+      <button class="tool" type="button" data-p="enBox" style="--tc:var(--k-en)"><span class="ti">🇬🇧</span><span class="tl">Вся лексика: английский</span><span class="tn" id="enCnt"></span></button>
+    </nav>
     <section class="panel vocab" id="esBox" hidden data-lang="es">
       <h3>Вся лексика: испанский</h3>
       <div class="vq"><input type="search" placeholder="Поиск слова" aria-label="Поиск слова"><label><input type="checkbox"> Скрыть перевод</label></div>
@@ -97,16 +118,6 @@
       <div class="vout"></div>
     </section>
 
-    <section class="panel" id="primBox" hidden>
-      <h3>Материалы для Примакова</h3>
-      <p class="hint">ПОСИ и матстатистика — Примаков В.Л.</p>
-      <div id="primOut"></div>
-    </section>
-
-
-    <div class="filter" id="filter" hidden><span id="filterT"></span><button id="clearF" type="button">Показать всё</button></div>
-    <main class="sec" id="list"></main>
-    <details class="past" id="pastBox" hidden><summary id="pastT"></summary><div class="sec" id="past"></div></details>
 
     <footer>
       <p id="status" role="status">Загрузка…</p>
