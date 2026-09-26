@@ -564,6 +564,8 @@ const toEmail = (login) => { const l = translit(login.trim().toLowerCase()).repl
 const toLogin = (email) => (email || "").endsWith("@" + LOGIN_DOMAIN) ? email.slice(0, -LOGIN_DOMAIN.length - 1) : email || "";
 function loginMsg(t, err) { const m = $("loginMsg"); m.textContent = t || ""; m.classList.toggle("err", !!err); }
 function showLogin() {
+  // Подставляем последнюю почту, чтобы при повторном входе оставалось ввести только пароль.
+  try { const last = localStorage.getItem("kdz-last-email"); if (last && !$("loginIn").value) $("loginIn").value = last; } catch (e) {}
   $("login").hidden = false; $("app").hidden = true;
   $("upd").textContent = "Закрытое приложение группы ИМОЗ-24-2.";
 }
@@ -579,7 +581,7 @@ $("loginForm").addEventListener("submit", async (ev) => {
   loginMsg("Входим…");
   const { error } = await sb.auth.signInWithPassword({ email: toEmail($("loginIn").value), password: $("pass").value });
   btn.disabled = false;
-  if (!error) { loginMsg(""); $("pass").value = ""; return; }
+  if (!error) { loginMsg(""); $("pass").value = ""; try { localStorage.setItem("kdz-last-email", $("loginIn").value.trim()); } catch (e) {} return; }
   if (error.status === 400 || /invalid/i.test(error.message || "")) loginMsg("Неверная почта или пароль.", true);
   else if (error.status === 429) loginMsg("Слишком много попыток. Подожди пару минут.", true);
   else loginMsg(navigator.onLine ? "Не получилось войти (" + (error.message || error.status) + ")." : "Нет интернета.", true);
@@ -599,7 +601,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "26";
+const APP_VERSION = "27";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
