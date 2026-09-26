@@ -640,6 +640,7 @@ function renderDaily() {
   if (typeof wordBar !== "undefined") wordBar.hidden = true;
   if (!dailyOpen) return;
   const out = $("dailyOut"); out.innerHTML = "";
+  out.style.setProperty("--tc", dailyOpen === "es" ? "var(--k-es)" : "var(--k-en)");
   // 10 новых (сегодняшние 5 + вчерашние 5) · 5 старых (позавчерашние, последний день) · 3 давно изученных.
   const win = dailyWindow(dailyOpen), byAge = (a) => (win.find((g) => g.age === a) || { words: [] }).words;
   [
@@ -805,7 +806,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "55";
+const APP_VERSION = "56";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
