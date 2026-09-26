@@ -315,3 +315,4 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 #dailyOut .dword:not(.hid) .vw{font-size:18px;font-weight:700;color:var(--ink)}
 #dailyOut .dword:not(.hid) .vt{font-size:14px;font-weight:500;color:var(--accent)}
 #dailyOut .dword:not(.hid) .vex{font-size:14px;color:var(--ink);opacity:.8;font-style:italic}
+#dailyOut .dword:not(.hid) .vt{font-size:15px;font-weight:600}
