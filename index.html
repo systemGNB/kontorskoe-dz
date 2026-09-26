@@ -64,6 +64,12 @@
       <ol class="pairs" id="pairs"></ol>
     </section>
 
+    <section class="daily" id="dailyBox" hidden>
+      <div class="daily-top"><h2>Слова на сегодня</h2><div class="dtabs" id="dailyTabs"></div></div>
+      <p class="hint">Каждый день 5 новых слов, вчерашние и позавчерашние — на повторение. Нажми на слово, чтобы увидеть перевод.</p>
+      <div id="dailyOut"></div>
+    </section>
+
     <nav class="tools" aria-label="Разделы">
       <button class="tool" type="button" data-p="esBox" style="--tc:var(--k-es)"><span class="ti">🇪🇸</span><span class="tl">Слова: испанский</span><span class="tn" id="esCnt"></span></button>
       <button class="tool" type="button" data-p="enBox" style="--tc:var(--k-en)"><span class="ti">🇬🇧</span><span class="tl">Слова: английский</span><span class="tn" id="enCnt"></span></button>
@@ -101,10 +107,14 @@
 
     <footer>
       <p id="status" role="status">Загрузка…</p>
-      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 30</span></p>
+      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 31</span></p>
       <details class="acct"><summary>Аккаунт</summary><p><span id="who"></span> · <button class="link" id="logoutBtn" type="button">Выйти</button></p><p class="hint">После выхода нужно будет снова ввести логин и пароль.</p></details>
     </footer>
   </div>
+</div>
+<div class="recall" id="recall" hidden role="dialog" aria-label="Повторение слова">
+  <span class="rk">🔁 Помнишь?</span><b id="recallW"></b><span class="rt" id="recallT"></span>
+  <button type="button" id="recallX" aria-label="Закрыть">×</button>
 </div>
 <script src="vendor/supabase.js"></script>
 <script src="vendor/confetti.js"></script>

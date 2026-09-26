@@ -416,7 +416,7 @@ $("nextW").addEventListener("click", () => { schedDate = addD(schedDate, 7); ren
 
 /* ---------- Отрисовка ---------- */
 function render() {
-  renderCal(); renderSched(); renderBooks(); renderMatsBox(); renderCounts();
+  renderCal(); renderSched(); renderBooks(); renderMatsBox(); renderCounts(); renderDaily();
   const list = $("list"); list.innerHTML = "";
   if (sel) {
     $("filter").hidden = false; $("filterT").textContent = "Срок: " + human(sel);
@@ -480,11 +480,17 @@ function renderVocab(panel) {
   out.innerHTML = "";
   const list = vocab.filter((v) => v.lang === lang && (!q || (v.word + " " + v.translation).toLowerCase().includes(q)));
   if (!list.length) { out.appendChild(el("p", "sum", q ? "Не найдено." : "Слов пока нет — пришли список или набор из Quizlet человеку, имя которого начинается на «А» и заканчивается на «Я».")); return; }
-  let cur = null, ul;
+  let cur = null, curUnit = null, ul;
   list.forEach((v) => {
     if (v.set_name !== cur) {
       cur = v.set_name;
-      const h = el("div", "vset"); h.appendChild(el("b", null, v.set_name)); if (v.source) h.appendChild(el("span", null, " · " + v.source));
+      // Юнит: «U1 · 3. Тема» → заголовок юнита «Aula Plus 2 — Unidad 1» и под ним темы.
+      const um = /^U(\d+)\s*·\s*(.+)$/.exec(v.set_name);
+      const unitKey = um ? (v.source || "") + "|" + um[1] : null;
+      if (unitKey && unitKey !== curUnit) { curUnit = unitKey; out.appendChild(el("h4", "vunit", v.source || "Юнит " + um[1])); }
+      if (!unitKey) curUnit = null;
+      const h = el("div", "vset"); h.appendChild(el("b", null, um ? um[2] : v.set_name));
+      if (v.source && !um) h.appendChild(el("span", null, " · " + v.source));
       out.appendChild(h); ul = el("ul", "vlist"); out.appendChild(ul);
     }
     const li = el("li", "vrow" + (hide ? " hid" : ""));
@@ -498,6 +504,86 @@ document.querySelectorAll(".panel.vocab").forEach((p) => {
   let t; p.querySelector("input[type=search]").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => renderVocab(p), 200); });
   p.querySelector("input[type=checkbox]").addEventListener("change", () => renderVocab(p));
 });
+
+
+/* ---------- Слова на сегодня: 15 слов, каждый день 5 новых, 5 самых старых уходят ---------- */
+// День считается от личной даты старта (хранится в профиле пользователя — одинаково на телефоне и ноутбуке).
+const DAILY_NEW = 5, WINDOW_DAYS = 3;
+let dailyLang = "es";
+try { dailyLang = localStorage.getItem("kdz-daily-lang") || "es"; } catch (e) {}
+function vocabStart() {
+  const md = (user && user.user_metadata) || {};
+  return md.vocab_start || null;
+}
+async function ensureVocabStart() {
+  if (!user || vocabStart()) return;
+  const { data } = await sb.auth.updateUser({ data: { vocab_start: today } });
+  if (data && data.user) user = data.user;
+}
+function dayIndex() {
+  const st = vocabStart() || today;
+  return Math.max(0, Math.round((Date.parse(today + "T00:00:00Z") - Date.parse(st + "T00:00:00Z")) / DAY));
+}
+function langWords(lang) { return vocab.filter((v) => v.lang === lang && !/^auto:/.test(v.id || "")); }
+/** Слова окна: [сегодняшние 5, вчерашние 5, позавчерашние 5]. Когда слова заканчиваются — начинаем круг заново. */
+function dailyWindow(lang) {
+  const all = langWords(lang); if (!all.length) return [];
+  const n = dayIndex(), groups = [];
+  for (let k = 0; k < WINDOW_DAYS && n - k >= 0; k++) {
+    const start = ((n - k) * DAILY_NEW) % all.length;
+    const g = []; for (let i = 0; i < DAILY_NEW && i < all.length; i++) g.push(all[(start + i) % all.length]);
+    groups.push({ age: k, words: g });
+  }
+  return groups;
+}
+function renderDaily() {
+  const box = $("dailyBox"); if (!box) return;
+  const langs = ["es", "en"].filter((l) => langWords(l).length);
+  box.hidden = !langs.length || !user;
+  if (box.hidden) return;
+  if (!langs.includes(dailyLang)) dailyLang = langs[0];
+  const tabs = $("dailyTabs"); tabs.innerHTML = "";
+  langs.forEach((l) => {
+    const b = el("button", "dtab" + (l === dailyLang ? " on" : ""), l === "es" ? "🇪🇸 Испанский" : "🇬🇧 Английский");
+    b.type = "button"; b.style.setProperty("--tc", l === "es" ? "var(--k-es)" : "var(--k-en)");
+    b.addEventListener("click", () => { dailyLang = l; try { localStorage.setItem("kdz-daily-lang", l); } catch (e) {} renderDaily(); });
+    tabs.appendChild(b);
+  });
+  const out = $("dailyOut"); out.innerHTML = "";
+  const labels = ["Новые сегодня", "Со вчера — повтори", "Позавчера — последний раз"];
+  dailyWindow(dailyLang).forEach((g) => {
+    out.appendChild(el("div", "dage", labels[g.age]));
+    const ul = el("ul", "dlist age" + g.age);
+    g.words.forEach((v) => {
+      const li = el("li", "dword" + (g.age > 0 ? " hid" : ""));
+      li.append(el("span", "vw", v.word), el("span", "vt", v.translation));
+      if (v.example && g.age === 0) li.appendChild(el("span", "vex", v.example));
+      li.title = "Нажми, чтобы показать/скрыть перевод";
+      li.addEventListener("click", () => li.classList.toggle("hid"));
+      ul.appendChild(li);
+    });
+    out.appendChild(ul);
+  });
+}
+
+/* ---------- Случайное повторение: иногда всплывает уже пройденное слово ---------- */
+function maybeRecall() {
+  if (!user || document.hidden) return;
+  let last = 0; try { last = Number(localStorage.getItem("kdz-recall-at") || 0); } catch (e) {}
+  if (Date.now() - last < 2 * 3600 * 1000 || Math.random() > 0.35) return;
+  const all = langWords(dailyLang); const passed = Math.min(all.length, Math.max(0, (dayIndex() - WINDOW_DAYS + 1) * DAILY_NEW));
+  const pool = all.slice(0, passed);
+  if (!pool.length) return;
+  const v = pool[Math.floor(Math.random() * pool.length)];
+  try { localStorage.setItem("kdz-recall-at", String(Date.now())); } catch (e) {}
+  const card = $("recall"); $("recallW").textContent = v.word; $("recallT").textContent = v.translation;
+  card.classList.add("hid"); card.hidden = false;
+}
+$("recall").addEventListener("click", (e) => {
+  if (e.target.id === "recallX") { $("recall").hidden = true; return; }
+  $("recall").classList.toggle("hid");
+});
+document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(maybeRecall, 4000 + Math.random() * 20000); });
 
 /* ---------- Материалы для Примакова ---------- */
 const PRIM_COURSES = ["ПОСИ-2", "Матстатистика"];
@@ -583,6 +669,8 @@ function showApp() {
   $("upd").textContent = "Пары, сроки сдачи и страницы учебников. Отметки «сделано» видишь только ты.";
   $("who").textContent = toLogin(user.email);
   render(); load();
+  ensureVocabStart().then(renderDaily).catch(() => {});
+  setTimeout(maybeRecall, 8000 + Math.random() * 30000);
 }
 $("loginForm").addEventListener("submit", async (ev) => {
   ev.preventDefault();
@@ -610,7 +698,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "30";
+const APP_VERSION = "31";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
