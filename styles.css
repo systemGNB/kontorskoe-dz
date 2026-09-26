@@ -339,3 +339,16 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .daily{border:2px solid color-mix(in srgb,var(--accent) 70%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 16%,var(--surface)) 0%,color-mix(in srgb,var(--k-es) 14%,var(--surface)) 55%,color-mix(in srgb,var(--k-en) 16%,var(--surface)) 100%);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 18%,transparent)}
 .daily h2{color:var(--accent);font-weight:600}
 .daily .dcard{background:var(--surface)}
+/* Тёмная тема: «Повтори слова» — насыщенный фиолетово-синий блок со свечением */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .daily{background:linear-gradient(135deg,#4a2f8f 0%,#34256e 45%,#1e3a78 100%);border-color:#a78bfa;box-shadow:0 0 0 1px rgba(167,139,250,.25),0 6px 22px rgba(124,92,255,.35)}
+  :root:not([data-theme="light"]) .daily h2{color:#fff}
+  :root:not([data-theme="light"]) .daily h2 .dnote{color:rgba(255,255,255,.75)}
+  :root:not([data-theme="light"]) .daily .dcard{background:rgba(15,14,30,.55)}
+  :root:not([data-theme="light"]) .daily .hint,:root:not([data-theme="light"]) .daily .dage{color:rgba(255,255,255,.75)}
+}
+:root[data-theme="dark"] .daily{background:linear-gradient(135deg,#4a2f8f 0%,#34256e 45%,#1e3a78 100%);border-color:#a78bfa;box-shadow:0 0 0 1px rgba(167,139,250,.25),0 6px 22px rgba(124,92,255,.35)}
+:root[data-theme="dark"] .daily h2{color:#fff}
+:root[data-theme="dark"] .daily h2 .dnote{color:rgba(255,255,255,.75)}
+:root[data-theme="dark"] .daily .dcard{background:rgba(15,14,30,.55)}
+:root[data-theme="dark"] .daily .hint,:root[data-theme="dark"] .daily .dage{color:rgba(255,255,255,.75)}
