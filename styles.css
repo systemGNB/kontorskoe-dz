@@ -254,3 +254,14 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .dword .vtheme{font-size:11px;text-transform:uppercase;letter-spacing:.04em}
 .dword.hid .vt,.dword.hid .vex,.dword.hid .vtheme{display:none}
 .dword.hid{grid-template-columns:1fr}
+/* Слова по полочкам: раздел → тема → слова */
+.vgrp{border:1px solid var(--line);border-radius:12px;margin-top:10px;padding:0 12px}
+.vgrp>summary{padding:11px 0;cursor:pointer;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-family:var(--display);font-size:16px}
+.vgrp[open]>summary{border-bottom:1px solid var(--line)}
+.vtopic{border-top:1px solid var(--line)}
+.vtopic:first-of-type{border-top:0}
+.vtopic>summary{padding:9px 0 9px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.vtopic[open]>summary{font-weight:600}
+.vtopic .vlist{margin:0 0 8px;padding-left:4px}
+.vcnt{color:var(--muted);font-size:12px;font-family:inherit;font-weight:400;white-space:nowrap}
+.vgrp>summary .vcnt{margin-left:auto}

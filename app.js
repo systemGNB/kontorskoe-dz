@@ -474,30 +474,58 @@ document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", ()
 }));
 
 /* ---------- Слова ---------- */
-function renderVocab(panel) {
-  const lang = panel.dataset.lang, q = panel.querySelector("input[type=search]").value.trim().toLowerCase();
-  const hide = panel.querySelector("input[type=checkbox]").checked, out = panel.querySelector(".vout");
-  out.innerHTML = "";
-  const list = vocab.filter((v) => v.lang === lang && (!q || (v.word + " " + v.translation).toLowerCase().includes(q)));
-  if (!list.length) { out.appendChild(el("p", "sum", q ? "Не найдено." : "Слов пока нет — пришли список или набор из Quizlet человеку, имя которого начинается на «А» и заканчивается на «Я».")); return; }
-  let cur = null, curUnit = null, ul;
+// Слова по полочкам: раздел (учебник/юнит или большая тема) → тема → слова. Всё свёрнуто, открывается по нажатию.
+function vocabTree(list) {
+  const groups = [];
   list.forEach((v) => {
-    if (v.set_name !== cur) {
-      cur = v.set_name;
-      // Юнит: «U1 · 3. Тема» → заголовок юнита «Aula Plus 2 — Unidad 1» и под ним темы.
-      const um = /^U(\d+)\s*·\s*(.+)$/.exec(v.set_name);
-      const unitKey = um ? (v.source || "") + "|" + um[1] : null;
-      if (unitKey && unitKey !== curUnit) { curUnit = unitKey; out.appendChild(el("h4", "vunit", v.source || "Юнит " + um[1])); }
-      if (!unitKey) curUnit = null;
-      const h = el("div", "vset"); h.appendChild(el("b", null, um ? um[2] : v.set_name));
-      if (v.source && !um) h.appendChild(el("span", null, " · " + v.source));
-      out.appendChild(h); ul = el("ul", "vlist"); out.appendChild(ul);
-    }
+    const gName = v.source || "Слова";
+    let g = groups.find((x) => x.name === gName);
+    if (!g) { g = { name: gName, topics: [] }; groups.push(g); }
+    const um = /^U\d+\s*·\s*(.+)$/.exec(v.set_name);
+    const tName = um ? um[1] : v.set_name;
+    let t = g.topics.find((x) => x.set === v.set_name);
+    if (!t) { t = { set: v.set_name, name: tName, unit: Number((/^Unit\s+(\d+)/.exec(v.set_name) || [])[1]) || 0, words: [] }; g.topics.push(t); }
+    t.words.push(v);
+  });
+  // Английский: внутри раздела — по номеру юнита (порядок «слов на сегодня» от этого не меняется).
+  groups.forEach((g) => g.topics.sort((x, y) => (x.unit && y.unit ? x.unit - y.unit : 0)));
+  return groups;
+}
+function wordWord(n) { const a = n % 10, b = n % 100; return n + " " + (a === 1 && b !== 11 ? "слово" : a >= 2 && a <= 4 && (b < 12 || b > 14) ? "слова" : "слов"); }
+function renderWords(ul, words, hide) {
+  words.forEach((v) => {
     const li = el("li", "vrow" + (hide ? " hid" : ""));
     li.append(el("span", "vw", v.word), el("span", "vt", v.translation));
     if (v.example) li.appendChild(el("span", "vex", v.example));
     li.addEventListener("click", () => li.classList.toggle("hid"));
     ul.appendChild(li);
+  });
+}
+function renderVocab(panel) {
+  const lang = panel.dataset.lang, q = panel.querySelector("input[type=search]").value.trim().toLowerCase();
+  const hide = panel.querySelector("input[type=checkbox]").checked, out = panel.querySelector(".vout");
+  // Запоминаем, что было открыто, чтобы галочка «Скрыть перевод» не сворачивала всё обратно.
+  const wasOpen = new Set([...out.querySelectorAll("details[open]")].map((d) => d.dataset.key));
+  out.innerHTML = "";
+  const list = vocab.filter((v) => v.lang === lang && (!q || (v.word + " " + v.translation).toLowerCase().includes(q)));
+  if (!list.length) { out.appendChild(el("p", "sum", q ? "Не найдено." : "Слов пока нет — пришли список или набор из Quizlet человеку, имя которого начинается на «А» и заканчивается на «Я».")); return; }
+  const groups = vocabTree(list), single = groups.length === 1;
+  groups.forEach((g) => {
+    const gd = el("details", "vgrp"); gd.dataset.key = "g:" + g.name; gd.open = !!q || single || wasOpen.has(gd.dataset.key);
+    const gs = el("summary"); gs.append(el("b", null, g.name), el("span", "vcnt", g.topics.length + " тем · " + wordWord(g.topics.reduce((n, t) => n + t.words.length, 0))));
+    gd.appendChild(gs);
+    g.topics.forEach((t) => {
+      const td = el("details", "vtopic"); td.dataset.key = "t:" + t.set;
+      const ts = el("summary"); ts.append(el("span", null, t.name), el("span", "vcnt", String(t.words.length)));
+      td.appendChild(ts);
+      const ul = el("ul", "vlist"); td.appendChild(ul);
+      // Слова рисуем только при открытии темы — так список не тормозит.
+      const fill = () => { if (!ul.childElementCount) renderWords(ul, t.words, hide); };
+      if (q || wasOpen.has(td.dataset.key)) { td.open = true; fill(); }
+      td.addEventListener("toggle", () => { if (td.open) fill(); });
+      gd.appendChild(td);
+    });
+    out.appendChild(gd);
   });
 }
 document.querySelectorAll(".panel.vocab").forEach((p) => {
@@ -708,7 +736,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "35";
+const APP_VERSION = "36";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
