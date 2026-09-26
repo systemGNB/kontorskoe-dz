@@ -594,6 +594,7 @@ function dailyWindow(lang) {
   }
   return groups;
 }
+document.addEventListener("click", () => document.querySelectorAll("#dailyOut .dword:not(.hid)").forEach((x) => x.classList.add("hid")));
 function renderDaily() {
   const box = $("dailyBox"); if (!box) return;
   const langs = ["es", "en"].filter((l) => langWords(l).length);
@@ -632,14 +633,23 @@ function renderDaily() {
     g.words.forEach((v) => {
       // Видно только испанское слово; перевод, тема и пример — по нажатию.
       const li = el("li", "dword hid");
-      li.append(el("span", "vw", v.word), el("span", "vt", v.translation));
-      if (v.example) li.appendChild(el("span", "vex", v.example));
+      // Перевод и пример — во всплывающей подсказке под словом: сами слова не сдвигаются.
+      const pop = el("span", "dpop");
+      pop.append(el("span", "vt", v.translation));
+      if (v.example) pop.appendChild(el("span", "vex", v.example));
+      li.append(el("span", "vw", v.word), pop);
       li.title = "Нажми, чтобы показать/скрыть перевод";
-      li.addEventListener("click", () => {
-        // Открыта одна плашка за раз: предыдущая сворачивается сама.
+      li.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        // Открыта одна подсказка за раз: предыдущая закрывается сама.
         const open = li.classList.contains("hid");
         out.querySelectorAll(".dword:not(.hid)").forEach((x) => x.classList.add("hid"));
         li.classList.toggle("hid", !open);
+        if (open) {
+          // Подсказка не вылезает за край блока: у правого края прижимаем её вправо.
+          const box = out.getBoundingClientRect(), r = li.getBoundingClientRect();
+          li.classList.toggle("pright", r.left + 280 > box.right && r.right - 280 >= box.left - 20);
+        }
       });
       ul.appendChild(li);
     });
@@ -788,7 +798,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "51";
+const APP_VERSION = "52";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

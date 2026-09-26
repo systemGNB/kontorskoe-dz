@@ -316,3 +316,15 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 #dailyOut .dword:not(.hid) .vt{font-size:14px;font-weight:500;color:var(--accent)}
 #dailyOut .dword:not(.hid) .vex{font-size:14px;color:var(--ink);opacity:.8;font-style:italic}
 #dailyOut .dword:not(.hid) .vt{font-size:15px;font-weight:600}
+/* Перевод во всплывающей подсказке: плашки остаются на месте */
+#dailyOut .dword,#dailyOut .dword:not(.hid){position:relative;flex:0 1 auto;border-radius:999px;padding:5px 10px}
+#dailyOut .dlist.age1 .dword:not(.hid),#dailyOut .dlist.age3 .dword:not(.hid){padding:4px 10px}
+#dailyOut .dword:not(.hid) .vw{font-size:inherit}
+#dailyOut .dword.hid .dpop{display:none}
+#dailyOut .dpop{position:absolute;z-index:20;top:calc(100% + 6px);left:0;width:max-content;max-width:min(280px,80vw);display:flex;flex-direction:column;gap:3px;padding:8px 12px;border-radius:12px;background:var(--surface);color:var(--ink);box-shadow:0 6px 20px rgba(0,0,0,.18),0 0 0 2px var(--accent);cursor:default;font-weight:400;opacity:1}
+#dailyOut .dword.pright .dpop{left:auto;right:0}
+#dailyOut .dpop::before{content:"";position:absolute;top:-6px;left:16px;border:6px solid transparent;border-top:0;border-bottom-color:var(--accent)}
+#dailyOut .dword.pright .dpop::before{left:auto;right:16px}
+#dailyOut .dpop .vt{font-size:15px;font-weight:600;color:var(--accent);filter:none}
+#dailyOut .dpop .vex{font-size:14px;color:var(--ink);opacity:.8;font-style:italic;filter:none}
+#dailyOut .dlist{position:relative}
