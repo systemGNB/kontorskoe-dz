@@ -206,13 +206,13 @@ function linkify(text) {
   return f;
 }
 const matDate = (m) => { const d = new Date(m.posted_at); return d.getDate() + " " + MON[d.getMonth()]; };
-async function renderMats(box, list, showCourse) {
+async function renderMats(box, list, showCourse, slides) {
   let urls = [];
   try { urls = await signedUrls(list.filter((m) => m.path).map((m) => m.path)); } catch (e) {}
   const byPath = new Map(list.filter((m) => m.path).map((m, i) => [m.path, urls[i]]));
-  list.forEach((m) => {
+  list.forEach((m, i) => {
     const it = el("div", "mat");
-    const head = (showCourse ? m.course + " · " : "") + matDate(m) + (m.file_name && m.kind !== "photo" ? " · " + m.file_name : "");
+    const head = slides ? "Слайд " + (i + 1) : (showCourse ? m.course + " · " : "") + matDate(m) + (m.file_name && m.kind !== "photo" ? " · " + m.file_name : "");
     it.appendChild(el("div", "mat-h", head));
     const u = m.path ? byPath.get(m.path) : "";
     if (u && (m.kind === "audio" || m.kind === "voice")) { const au = el("audio"); au.controls = true; au.preload = "none"; au.src = u; it.appendChild(au); }
@@ -699,9 +699,29 @@ async function renderPrim() {
     if (r.note) it.appendChild(el("p", "sum", r.note));
     out.appendChild(it);
   });
-  const tg = mats.filter((m) => PRIM_COURSES.includes(m.course)).slice(0, 15);
-  if (tg.length) { out.appendChild(el("div", "vset", "Из Telegram (ПОСИ, матстатистика)")); const box = el("div"); out.appendChild(box); renderMats(box, tg, true); }
-  if (!list.length && !tg.length) out.appendChild(el("p", "sum", "Пока пусто."));
+  // Лекции: фото из темы «ПОСИ» группы «Конторское ДЗ». Один день пересылки = одна лекция, номера по порядку дат.
+  const photos = mats.filter((m) => m.course === "ПОСИ-2" && m.kind === "photo").sort((x, y) => Date.parse(x.posted_at) - Date.parse(y.posted_at));
+  const days = [];
+  photos.forEach((m) => {
+    const d = new Date(Date.parse(m.posted_at) + 3 * 3600000).toISOString().slice(0, 10);
+    if (!days.length || days[days.length - 1].day !== d) days.push({ day: d, items: [] });
+    days[days.length - 1].items.push(m);
+  });
+  if (days.length) {
+    out.appendChild(el("div", "vset", "Лекции"));
+    days.forEach((g, i) => {
+      const x = new Date(g.day + "T00:00:00Z");
+      const sec = el("details", "lecture");
+      sec.appendChild(el("summary", null, "Лекция " + (i + 1) + " · " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + " — " + g.items.length + " фото"));
+      const all = g.items.map((m, k) => m.text ? "Слайд " + (k + 1) + "\n" + m.text : "").filter(Boolean).join("\n\n— — —\n\n");
+      if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
+      sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderMats(sec, g.items, false, true); } });
+      out.appendChild(sec);
+    });
+  }
+  const tg = mats.filter((m) => PRIM_COURSES.includes(m.course) && !(m.course === "ПОСИ-2" && m.kind === "photo")).slice(0, 15);
+  if (tg.length) { out.appendChild(el("div", "vset", "Файлы из Telegram (ПОСИ, матстатистика)")); const box = el("div"); out.appendChild(box); renderMats(box, tg, true); }
+  if (!list.length && !tg.length && !days.length) out.appendChild(el("p", "sum", "Пока пусто."));
 }
 function renderCounts() {
   $("esCnt").textContent = vocab.filter((v) => v.lang === "es").length || "";
@@ -730,7 +750,7 @@ async function load() {
       sb.from("homework").select("id,course,title,summary,due,link,telegram,pages,created_at").order("due", { ascending: true, nullsFirst: false }),
       sb.from("done").select("homework_id"),
       sb.from("books").select("slug,title,course,aliases,pages"),
-      sb.from("materials").select("id,chat_id,message_id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(300),
+      sb.from("materials").select("id,chat_id,message_id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(1000),
       selectAll(() => sb.from("vocab").select("lang,set_name,source,word,translation,example,sort").order("sort").order("id")),
       sb.from("resources").select("block,title,note,url,path,sort").order("sort"),
     ]);
@@ -806,7 +826,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "56";
+const APP_VERSION = "57";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
