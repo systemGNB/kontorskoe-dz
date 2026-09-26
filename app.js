@@ -709,23 +709,32 @@ function mdToHtml(md) {
   return out.join("");
 }
 /** Слайды лекции — компактной сеткой миниатюр; нажатие открывает слайд на весь экран (листать ‹ ›). */
-async function renderSlides(box, items) {
+function slideTexts(course, day) {
+  const r = res.find((x) => x.block === "slides" && x.title === course + "|" + day);
+  try { return r ? JSON.parse(r.note) : {}; } catch (e) { return {}; }
+}
+async function renderSlides(box, items, texts = {}) {
   let urls = [];
   try { urls = await signedUrls(items.map((m) => m.path).filter(Boolean)); } catch (e) {}
   const byPath = new Map(items.filter((m) => m.path).map((m, i) => [m.path, urls[i]]));
   const grid = el("div", "slides");
   items.forEach((m, i) => {
+    const card = el("div", "slidecard");
     const b = el("button", "slide"); b.type = "button";
     const u = m.path ? byPath.get(m.path) : "";
     if (u) { const im = el("img"); im.src = u; im.loading = "lazy"; im.alt = "Слайд " + (i + 1); b.appendChild(im); }
     else b.appendChild(el("span", "slide-na", "нет фото"));
     b.appendChild(el("span", "slide-n", String(i + 1)));
-    b.addEventListener("click", () => openSlide(items, byPath, i));
-    grid.appendChild(b);
+    b.addEventListener("click", () => openSlide(items, byPath, i, texts));
+    card.appendChild(b);
+    // Текст слайда рядом с фото: чистый (собранный вручную), иначе распознанный автоматически.
+    const t = texts[String(m.message_id)] || m.text || "";
+    if (t) card.appendChild(el("div", "slide-t" + (texts[String(m.message_id)] ? "" : " raw"), t));
+    grid.appendChild(card);
   });
   box.appendChild(grid);
 }
-function openSlide(items, byPath, i) {
+function openSlide(items, byPath, i, texts = {}) {
   let v = $("slideView");
   if (!v) { v = el("div", "slideview"); v.id = "slideView"; document.body.appendChild(v); }
   const show = (k) => {
@@ -738,7 +747,9 @@ function openSlide(items, byPath, i) {
     v.appendChild(bar);
     const u = m.path ? byPath.get(m.path) : "";
     if (u) { const im = el("img", "sv-img"); im.src = u; im.alt = "Слайд " + (i + 1); v.appendChild(im); }
-    if (m.text) { const d = el("details", "ocr sv-ocr"); d.appendChild(el("summary", null, "Текст со слайда")); d.appendChild(el("p", "sum", m.text)); v.appendChild(d); }
+    const clean = texts[String(m.message_id)];
+    if (clean) v.appendChild(el("div", "sv-text", clean));
+    else if (m.text) { const d = el("details", "ocr sv-ocr"); d.appendChild(el("summary", null, "Текст со слайда (распознан автоматически)")); d.appendChild(el("p", "sum", m.text)); v.appendChild(d); }
     prev.onclick = () => show(i - 1); next.onclick = () => show(i + 1);
     close.onclick = () => { v.hidden = true; document.body.classList.remove("noscroll"); };
   };
@@ -774,7 +785,7 @@ function renderLectures(out, course) {
       if (k && k.note) { const d = el("details", "ocr konspekt"); d.appendChild(el("summary", null, "📝 Конспект лекции")); const body = el("div", "kbody"); body.innerHTML = mdToHtml(k.note); d.appendChild(body); sec.appendChild(d); }
       const all = g.items.map((m, k) => m.text ? "Слайд " + (k + 1) + "\n" + m.text : "").filter(Boolean).join("\n\n— — —\n\n");
       if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
-      sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderSlides(sec, g.items); } });
+      sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderSlides(sec, g.items, slideTexts(course, g.day)); } });
       out.appendChild(sec);
     });
   }
@@ -911,7 +922,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "62";
+const APP_VERSION = "63";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

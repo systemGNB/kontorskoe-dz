@@ -413,3 +413,10 @@ body.noscroll{overflow:hidden}
 @media (min-width:560px){.slides .slide{flex-basis:40%}}
 .slides .slide img{object-fit:cover}
 .slides .slide-n{font-size:12px}
+/* Слайд + его текст рядом (в ленте) */
+.slides .slidecard{flex:0 0 82%;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;min-width:0}
+@media (min-width:560px){.slides .slidecard{flex-basis:42%}}
+.slides .slidecard .slide{flex:none;width:100%;aspect-ratio:4/3}
+.slide-t{white-space:pre-line;font-size:13px;line-height:1.45;color:var(--ink);background:var(--sunk);border-radius:8px;padding:8px 10px;max-height:260px;overflow-y:auto}
+.slide-t.raw{color:var(--muted);font-size:12px}
+.sv-text{white-space:pre-line;width:100%;max-width:900px;background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.5}
