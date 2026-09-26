@@ -472,6 +472,22 @@ document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", ()
   if (id === "primBox") renderPrim();
   if (id === "booksBox") renderBookLinks();
 }));
+// Учебники и материалы для Примакова сворачиваются сами, когда их пролистали вниз к заданиям.
+// Экран при этом не прыгает: задания остаются там же, где были.
+const AUTO_CLOSE = ["booksBox", "primBox"];
+let autoCloseTick = false;
+window.addEventListener("scroll", () => {
+  if (autoCloseTick) return; autoCloseTick = true;
+  requestAnimationFrame(() => {
+    autoCloseTick = false;
+    const panel = AUTO_CLOSE.map($).find((p) => p && !p.hidden);
+    if (!panel || panel.getBoundingClientRect().bottom > 0) return;
+    const anchor = $("list"), before = anchor.getBoundingClientRect().top;
+    panel.hidden = true;
+    document.querySelectorAll(".tool").forEach((x) => { x.classList.remove("on"); x.setAttribute("aria-expanded", "false"); });
+    window.scrollBy(0, anchor.getBoundingClientRect().top - before);
+  });
+}, { passive: true });
 
 /* ---------- Слова ---------- */
 // Слова по полочкам: раздел (учебник/юнит или большая тема) → тема → слова. Всё свёрнуто, открывается по нажатию.
@@ -772,7 +788,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "49";
+const APP_VERSION = "50";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
