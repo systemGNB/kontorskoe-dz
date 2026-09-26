@@ -599,9 +599,14 @@ function renderDaily() {
   const body = $("dailyBody"); body.hidden = !dailyOpen;
   if (!dailyOpen) return;
   const out = $("dailyOut"); out.innerHTML = "";
-  const labels = ["Новые сегодня", "Со вчера — повтори", "Позавчера — последний раз", "Из пройденного — вспомни"];
-  dailyWindow(dailyOpen).forEach((g) => {
-    out.appendChild(el("div", "dage", labels[g.age]));
+  // 10 новых (сегодняшние 5 + вчерашние 5) · 5 старых (позавчерашние, последний день) · 3 давно изученных.
+  const win = dailyWindow(dailyOpen), byAge = (a) => (win.find((g) => g.age === a) || { words: [] }).words;
+  [
+    { age: 0, label: "Новые — учим", words: byAge(0).concat(byAge(1)) },
+    { age: 1, label: "Изучали раньше — повтори", words: byAge(2) },
+    { age: 3, label: "Давно изученные — вспомни", words: byAge(3) },
+  ].filter((g) => g.words.length).forEach((g) => {
+    out.appendChild(el("div", "dage", g.label + " · " + g.words.length));
     const ul = el("ul", "dlist age" + g.age);
     g.words.forEach((v) => {
       // Видно только испанское слово; перевод, тема и пример — по нажатию.
@@ -757,7 +762,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "40";
+const APP_VERSION = "41";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
