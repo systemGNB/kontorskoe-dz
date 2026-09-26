@@ -687,6 +687,27 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) setT
 
 /* ---------- Материалы для Примакова ---------- */
 const PRIM_COURSES = ["ПОСИ-2", "Матстатистика"];
+/** Мини-разметка конспекта: заголовки #, списки, **жирный**, *курсив*, таблицы |…|, цитаты >. */
+function mdToHtml(md) {
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inl = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>");
+  const out = []; let list = null, table = null;
+  const flush = () => { if (list) { out.push(`<${list.t}>` + list.items.map((x) => `<li>${x}</li>`).join("") + `</${list.t}>`); list = null; }
+    if (table) { out.push("<div class='kt'><table>" + table.map((r, i) => "<tr>" + r.map((c) => i ? `<td>${inl(c)}</td>` : `<th>${inl(c)}</th>`).join("") + "</tr>").join("") + "</table></div>"); table = null; } };
+  md.split("\n").forEach((line) => {
+    const l = line.trim(); let m;
+    if (/^\|/.test(l)) { if (/^\|[\s|:-]+\|$/.test(l)) return; if (list) { const t = table; table = null; flush(); table = t; } (table = table || []).push(l.replace(/^\||\|$/g, "").split("|").map((c) => c.trim())); return; }
+    if ((m = /^(#{1,3})\s+(.*)$/.exec(l))) { flush(); out.push(`<h${m[1].length + 2}>${inl(m[2])}</h${m[1].length + 2}>`); return; }
+    if ((m = /^[-•]\s+(.*)$/.exec(l)) || (m = /^\d+[.)]\s+(.*)$/.exec(l))) { const t = /^\d/.test(l) ? "ol" : "ul"; if (table) flush(); if (!list || list.t !== t) { flush(); list = { t, items: [] }; } list.items.push(inl(m[1])); return; }
+    if (list && l && /^\S/.test(line) === false) { list.items[list.items.length - 1] += "<br>" + inl(l); return; }
+    flush();
+    if (!l) return;
+    if ((m = /^>\s*(.*)$/.exec(l))) { out.push(`<p class='kq'>${inl(m[1])}</p>`); return; }
+    out.push(`<p>${inl(l)}</p>`);
+  });
+  flush();
+  return out.join("");
+}
 /** Слайды лекции — компактной сеткой миниатюр; нажатие открывает слайд на весь экран (листать ‹ ›). */
 async function renderSlides(box, items) {
   let urls = [];
@@ -745,6 +766,8 @@ function renderLectures(out, course) {
       const x = new Date(g.day + "T00:00:00Z");
       const sec = el("details", "lecture");
       sec.appendChild(el("summary", null, "Лекция " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + " — " + g.items.length + " фото"));
+      const k = res.find((r) => r.block === "konspekt" && r.title === course + "|" + g.day);
+      if (k && k.note) { const d = el("details", "ocr konspekt"); d.appendChild(el("summary", null, "📝 Конспект лекции")); const body = el("div", "kbody"); body.innerHTML = mdToHtml(k.note); d.appendChild(body); sec.appendChild(d); }
       const all = g.items.map((m, k) => m.text ? "Слайд " + (k + 1) + "\n" + m.text : "").filter(Boolean).join("\n\n— — —\n\n");
       if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
       sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderSlides(sec, g.items); } });
@@ -884,7 +907,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "60";
+const APP_VERSION = "61";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

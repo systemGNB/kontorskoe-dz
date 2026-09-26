@@ -394,3 +394,16 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .sv-img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px}
 .sv-ocr{width:100%;max-width:900px;background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px}
 body.noscroll{overflow:hidden}
+/* Конспект лекции */
+.kbody{margin-top:8px;font-size:14px;line-height:1.5;color:var(--ink)}
+.kbody h3{font-size:17px;margin:12px 0 6px}
+.kbody h4{font-size:15px;margin:14px 0 6px;color:var(--accent)}
+.kbody h5{font-size:14px;margin:12px 0 4px}
+.kbody p{margin:6px 0}
+.kbody ul,.kbody ol{margin:4px 0 8px;padding-left:20px}
+.kbody li{margin:2px 0}
+.kbody .kq{font-size:12px;color:var(--muted);border-left:3px solid var(--line);padding-left:8px}
+.kbody .kt{overflow-x:auto;margin:8px 0}
+.kbody table{border-collapse:collapse;font-size:12px;min-width:560px}
+.kbody th,.kbody td{border:1px solid var(--line);padding:4px 6px;vertical-align:top;text-align:left}
+.kbody th{background:var(--sunk)}
