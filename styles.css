@@ -328,3 +328,14 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 #dailyOut .dpop .vt{font-size:15px;font-weight:600;color:var(--accent);filter:none}
 #dailyOut .dpop .vex{font-size:14px;color:var(--ink);opacity:.8;font-style:italic;filter:none}
 #dailyOut .dlist{position:relative}
+/* Расписание: даты недели компактнее, сам блок — лёгкая цветная обводка */
+.tabs{gap:3px}
+.tab{padding:3px 0 4px;border-radius:8px}
+.tab .tw{font-size:10px}
+.tab .tn{font-size:13px}
+.tdot{top:3px;right:4px;width:5px;height:5px}
+.sched{border:1.5px solid color-mix(in srgb,var(--accent) 35%,var(--line))}
+/* Повтори слова — яркий заметный блок */
+.daily{border:2px solid color-mix(in srgb,var(--accent) 70%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 16%,var(--surface)) 0%,color-mix(in srgb,var(--k-es) 14%,var(--surface)) 55%,color-mix(in srgb,var(--k-en) 16%,var(--surface)) 100%);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 18%,transparent)}
+.daily h2{color:var(--accent);font-weight:600}
+.daily .dcard{background:var(--surface)}
