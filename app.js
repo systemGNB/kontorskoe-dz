@@ -558,9 +558,7 @@ function renderDaily() {
       // Видно только испанское слово; перевод, тема и пример — по нажатию.
       const li = el("li", "dword hid");
       li.append(el("span", "vw", v.word), el("span", "vt", v.translation));
-      const theme = (v.set_name || "").replace(/^U\d+\s*·\s*\d+\.\s*/, "");
       if (v.example) li.appendChild(el("span", "vex", v.example));
-      if (theme) li.appendChild(el("span", "vtheme", "Тема: " + theme));
       li.title = "Нажми, чтобы показать/скрыть перевод";
       li.addEventListener("click", () => li.classList.toggle("hid"));
       ul.appendChild(li);
@@ -701,7 +699,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "32";
+const APP_VERSION = "33";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
