@@ -726,10 +726,15 @@ async function renderSlides(box, items, texts = {}) {
     else b.appendChild(el("span", "slide-na", "нет фото"));
     b.appendChild(el("span", "slide-n", String(i + 1)));
     b.addEventListener("click", () => openSlide(items, byPath, i, texts));
-    card.appendChild(b);
-    // Текст слайда рядом с фото: чистый (собранный вручную), иначе распознанный автоматически.
+    // Главное — текст слайда (чистый, собранный вручную; иначе распознанный автоматически), фото — маленькое под ним.
     const t = texts[String(m.message_id)] || m.text || "";
-    if (t) card.appendChild(el("div", "slide-t" + (texts[String(m.message_id)] ? "" : " raw"), t));
+    if (t) {
+      const [head, ...rest] = t.split("\n");
+      const tb = el("div", "slide-t" + (texts[String(m.message_id)] ? "" : " raw"));
+      tb.append(el("div", "slide-th", (i + 1) + ". " + head), document.createTextNode(rest.join("\n")));
+      card.appendChild(tb);
+    }
+    card.appendChild(b);
     grid.appendChild(card);
   });
   box.appendChild(grid);
@@ -922,7 +927,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "63";
+const APP_VERSION = "64";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
