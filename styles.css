@@ -282,3 +282,11 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 #dailyBody[hidden]{display:none}
 .dlist.age3 .dword{background:transparent;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));padding:5px 10px;font-size:14px}
 .dlist.age3 .dword .vw{font-weight:600}
+/* Повтори слова: компактные «плашки» в несколько рядов; нажатая раскрывается на всю ширину */
+#dailyOut .dlist{flex-direction:row;flex-wrap:wrap;gap:5px}
+#dailyOut .dword{display:inline-flex;flex-direction:column;flex:0 1 auto;max-width:100%;gap:2px;padding:5px 10px;border-radius:999px;font-size:14px}
+#dailyOut .dword .vw{font-weight:600}
+#dailyOut .dword:not(.hid){flex:1 1 100%;border-radius:12px;padding:7px 12px}
+#dailyOut .dlist.age0 .dword{font-size:15px}
+#dailyOut .dlist.age1 .dword,#dailyOut .dlist.age3 .dword{font-size:13px;padding:4px 10px}
+#dailyOut .dlist.age1 .dword:not(.hid),#dailyOut .dlist.age3 .dword:not(.hid){padding:7px 12px}
