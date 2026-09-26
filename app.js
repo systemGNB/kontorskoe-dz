@@ -472,9 +472,9 @@ document.querySelectorAll(".tool").forEach((t) => t.addEventListener("click", ()
   if (id === "primBox") renderPrim();
   if (id === "booksBox") renderBookLinks();
 }));
-// Учебники и материалы для Примакова сворачиваются сами, когда их пролистали вниз к заданиям.
+// Учебники, Примаков и «Вся лексика» сворачиваются сами, когда их пролистали вниз к заданиям.
 // Экран при этом не прыгает: задания остаются там же, где были.
-const AUTO_CLOSE = ["booksBox", "primBox"];
+const AUTO_CLOSE = ["booksBox", "primBox", "esBox", "enBox"];
 let autoCloseTick = false;
 window.addEventListener("scroll", () => {
   if (autoCloseTick) return; autoCloseTick = true;
@@ -788,7 +788,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "50";
+const APP_VERSION = "51";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
