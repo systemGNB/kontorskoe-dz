@@ -249,3 +249,8 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .recall .rt{color:var(--muted)}
 .recall.hid .rt{filter:blur(6px)}
 .recall button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:20px;color:var(--muted);cursor:pointer}
+.dword .vex,.dword .vtheme{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.dword .vex{font-style:italic}
+.dword .vtheme{font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.dword.hid .vt,.dword.hid .vex,.dword.hid .vtheme{display:none}
+.dword.hid{grid-template-columns:1fr}
