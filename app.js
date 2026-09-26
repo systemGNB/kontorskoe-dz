@@ -537,7 +537,7 @@ document.querySelectorAll(".panel.vocab").forEach((p) => {
 /* ---------- Слова на сегодня: 10 слов — 5 новых и 5 вчерашних на повторение ---------- */
 // День считается от личной даты старта (хранится в профиле пользователя — одинаково на телефоне и ноутбуке).
 const DAILY_NEW = 5, WINDOW_DAYS = 2;
-let dailyLang = "es";
+let dailyLang = "es", dailyOpen = null;
 try { dailyLang = localStorage.getItem("kdz-daily-lang") || "es"; } catch (e) {}
 function vocabStart() {
   const md = (user && user.user_metadata) || {};
@@ -570,16 +570,28 @@ function renderDaily() {
   box.hidden = !langs.length || !user;
   if (box.hidden) return;
   if (!langs.includes(dailyLang)) dailyLang = langs[0];
-  const tabs = $("dailyTabs"); tabs.innerHTML = "";
+  if (dailyOpen && !langs.includes(dailyOpen)) dailyOpen = null;
+  // Две карточки: Испанский / Английский. Нажала — под ними раскрываются слова, ещё раз — сворачиваются.
+  const cards = $("dailyCards"); cards.innerHTML = "";
   langs.forEach((l) => {
-    const b = el("button", "dtab" + (l === dailyLang ? " on" : ""), l === "es" ? "🇪🇸 Испанский" : "🇬🇧 Английский");
+    const win = dailyWindow(l), n = win.reduce((k, g) => k + g.words.length, 0), fresh = win[0] ? win[0].words.length : 0;
+    const b = el("button", "dcard" + (l === dailyOpen ? " on" : ""));
     b.type = "button"; b.style.setProperty("--tc", l === "es" ? "var(--k-es)" : "var(--k-en)");
-    b.addEventListener("click", () => { dailyLang = l; try { localStorage.setItem("kdz-daily-lang", l); } catch (e) {} renderDaily(); });
-    tabs.appendChild(b);
+    b.setAttribute("aria-expanded", String(l === dailyOpen));
+    b.append(el("span", "dflag", l === "es" ? "🇪🇸" : "🇬🇧"), el("span", "dname", l === "es" ? "Испанский" : "Английский"),
+      el("span", "dsub", wordWord(n)));
+    b.addEventListener("click", () => {
+      dailyOpen = dailyOpen === l ? null : l; dailyLang = l;
+      try { localStorage.setItem("kdz-daily-lang", l); } catch (e) {}
+      renderDaily();
+    });
+    cards.appendChild(b);
   });
+  const body = $("dailyBody"); body.hidden = !dailyOpen;
+  if (!dailyOpen) return;
   const out = $("dailyOut"); out.innerHTML = "";
   const labels = ["Новые сегодня", "Со вчера — повтори"];
-  dailyWindow(dailyLang).forEach((g) => {
+  dailyWindow(dailyOpen).forEach((g) => {
     out.appendChild(el("div", "dage", labels[g.age]));
     const ul = el("ul", "dlist age" + g.age);
     g.words.forEach((v) => {
@@ -736,7 +748,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "37";
+const APP_VERSION = "38";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
