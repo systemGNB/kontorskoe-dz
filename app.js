@@ -699,20 +699,22 @@ async function renderPrim() {
     if (r.note) it.appendChild(el("p", "sum", r.note));
     out.appendChild(it);
   });
-  // Лекции: фото из темы «ПОСИ» группы «Конторское ДЗ». Один день пересылки = одна лекция, номера по порядку дат.
+  // Лекции: фото из темы «ПОСИ» группы «Конторское ДЗ». Дата — из сообщения-метки перед фото («20.09»),
+  // без метки — день пересылки. Разделы идут по датам.
   const photos = mats.filter((m) => m.course === "ПОСИ-2" && m.kind === "photo").sort((x, y) => Date.parse(x.posted_at) - Date.parse(y.posted_at));
-  const days = [];
+  const byDay = new Map();
   photos.forEach((m) => {
-    const d = new Date(Date.parse(m.posted_at) + 3 * 3600000).toISOString().slice(0, 10);
-    if (!days.length || days[days.length - 1].day !== d) days.push({ day: d, items: [] });
-    days[days.length - 1].items.push(m);
+    const d = /^\d{4}-\d\d-\d\d$/.test(m.lecture || "") ? m.lecture : new Date(Date.parse(m.posted_at) + 3 * 3600000).toISOString().slice(0, 10);
+    if (!byDay.has(d)) byDay.set(d, { day: d, items: [] });
+    byDay.get(d).items.push(m);
   });
+  const days = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
   if (days.length) {
     out.appendChild(el("div", "vset", "Лекции"));
     days.forEach((g, i) => {
       const x = new Date(g.day + "T00:00:00Z");
       const sec = el("details", "lecture");
-      sec.appendChild(el("summary", null, "Лекция " + (i + 1) + " · " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + " — " + g.items.length + " фото"));
+      sec.appendChild(el("summary", null, "Лекция " + x.getUTCDate() + " " + MON[x.getUTCMonth()] + " — " + g.items.length + " фото"));
       const all = g.items.map((m, k) => m.text ? "Слайд " + (k + 1) + "\n" + m.text : "").filter(Boolean).join("\n\n— — —\n\n");
       if (all) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "Весь текст лекции")); d.appendChild(el("p", "sum", all)); sec.appendChild(d); }
       sec.addEventListener("toggle", () => { if (sec.open && !sec.dataset.loaded) { sec.dataset.loaded = "1"; renderMats(sec, g.items, false, true); } });
@@ -756,7 +758,8 @@ async function load() {
     ]);
     if (!vc.error) { vocab = vc.data || []; lsSet("kdz-vocab", vocab); }
     if (!rs.error) { res = rs.data || []; lsSet("kdz-res", res); }
-    if (!mt.error) { mats = mt.data || []; lsSet("kdz-mat", mats); }
+    // «#lecture» — служебные метки даты лекции от бота, сами по себе не показываем.
+    if (!mt.error) { mats = (mt.data || []).filter((m) => m.file_name !== "#lecture"); lsSet("kdz-mat", mats); }
     if (!bk.error) { books = bk.data || []; lsSet("kdz-books", books); }
     if (h.error) throw h.error;
     if (d.error) throw d.error;
@@ -826,7 +829,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "57";
+const APP_VERSION = "58";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
