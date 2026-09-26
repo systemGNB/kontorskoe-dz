@@ -510,9 +510,14 @@ function renderVocab(panel) {
   const list = vocab.filter((v) => v.lang === lang && (!q || (v.word + " " + v.translation).toLowerCase().includes(q)));
   if (!list.length) { out.appendChild(el("p", "sum", q ? "Не найдено." : "Слов пока нет — пришли список или набор из Quizlet человеку, имя которого начинается на «А» и заканчивается на «Я».")); return; }
   const groups = vocabTree(list), single = groups.length === 1;
+  let book = null;
   groups.forEach((g) => {
+    // «Учебник — раздел»: название учебника один раз заголовком, под ним компактные разделы.
+    const bm = /^(.+?)\s+—\s+(.+)$/.exec(g.name);
+    const bName = bm ? bm[1] : null, gName = bm ? bm[2] : g.name;
+    if (bName && bName !== book) { book = bName; out.appendChild(el("h4", "vbook", "📘 " + bName)); }
     const gd = el("details", "vgrp"); gd.dataset.key = "g:" + g.name; gd.open = !!q || single || wasOpen.has(gd.dataset.key);
-    const gs = el("summary"); gs.append(el("b", null, g.name), el("span", "vcnt", g.topics.length + " тем · " + wordWord(g.topics.reduce((n, t) => n + t.words.length, 0))));
+    const gs = el("summary"); gs.append(el("b", null, gName), el("span", "vcnt", String(g.topics.reduce((n, t) => n + t.words.length, 0))));
     gd.appendChild(gs);
     g.topics.forEach((t) => {
       const td = el("details", "vtopic"); td.dataset.key = "t:" + t.set;
@@ -762,7 +767,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "42";
+const APP_VERSION = "43";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

@@ -290,3 +290,13 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 #dailyOut .dlist.age0 .dword{font-size:15px}
 #dailyOut .dlist.age1 .dword,#dailyOut .dlist.age3 .dword{font-size:13px;padding:4px 10px}
 #dailyOut .dlist.age1 .dword:not(.hid),#dailyOut .dlist.age3 .dword:not(.hid){padding:7px 12px}
+/* Вся лексика: название учебника сверху, разделы компактнее */
+.vbook{margin:6px 0 2px;font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink)}
+.vgrp{margin-top:6px;padding:0 10px;border-radius:10px}
+.vgrp>summary{padding:7px 0;font-family:inherit;font-size:13px}
+.vgrp>summary b{font-weight:600}
+.vtopic>summary{padding:6px 0 6px 4px;font-size:13px}
+.vcnt{font-size:11px}
+.vgrp>summary{flex-wrap:nowrap;align-items:center;gap:10px}
+.vgrp>summary b{flex:1;min-width:0;line-height:1.25}
+.vgrp>summary .vcnt{margin-left:0}
