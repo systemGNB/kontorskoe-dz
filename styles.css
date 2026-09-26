@@ -407,3 +407,9 @@ body.noscroll{overflow:hidden}
 .kbody table{border-collapse:collapse;font-size:12px;min-width:560px}
 .kbody th,.kbody td{border:1px solid var(--line);padding:4px 6px;vertical-align:top;text-align:left}
 .kbody th{background:var(--sunk)}
+/* Слайды лекции — горизонтальная лента, листается пальцем */
+.slides{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:6px;overscroll-behavior-x:contain}
+.slides .slide{flex:0 0 78%;scroll-snap-align:start;aspect-ratio:3/4}
+@media (min-width:560px){.slides .slide{flex-basis:40%}}
+.slides .slide img{object-fit:cover}
+.slides .slide-n{font-size:12px}

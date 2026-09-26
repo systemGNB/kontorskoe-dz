@@ -743,6 +743,10 @@ function openSlide(items, byPath, i) {
     close.onclick = () => { v.hidden = true; document.body.classList.remove("noscroll"); };
   };
   v.hidden = false; document.body.classList.add("noscroll"); show(i);
+  // Свайп влево/вправо — следующий/предыдущий слайд.
+  let x0 = null;
+  v.ontouchstart = (e) => { x0 = e.touches[0].clientX; };
+  v.ontouchend = (e) => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) show(dx < 0 ? i + 1 : i - 1); };
 }
 document.addEventListener("keydown", (e) => {
   const v = $("slideView"); if (!v || v.hidden) return;
@@ -907,7 +911,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "61";
+const APP_VERSION = "62";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
