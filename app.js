@@ -619,7 +619,12 @@ function renderDaily() {
       li.append(el("span", "vw", v.word), el("span", "vt", v.translation));
       if (v.example) li.appendChild(el("span", "vex", v.example));
       li.title = "Нажми, чтобы показать/скрыть перевод";
-      li.addEventListener("click", () => li.classList.toggle("hid"));
+      li.addEventListener("click", () => {
+        // Открыта одна плашка за раз: предыдущая сворачивается сама.
+        const open = li.classList.contains("hid");
+        out.querySelectorAll(".dword:not(.hid)").forEach((x) => x.classList.add("hid"));
+        li.classList.toggle("hid", !open);
+      });
       ul.appendChild(li);
     });
     out.appendChild(ul);
@@ -767,7 +772,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "48";
+const APP_VERSION = "49";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
