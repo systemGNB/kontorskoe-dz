@@ -133,8 +133,6 @@ button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{o
 .cell input:focus-visible+.box{outline:2px solid var(--accent);outline-offset:2px}
 .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .ttl{font-weight:600;cursor:pointer;overflow-wrap:anywhere}
-.task.done .ttl{color:var(--muted);text-decoration:line-through}
-.task.done .sum{opacity:.6}
 .sum{margin:0;font-size:14px;color:var(--muted);white-space:pre-line;overflow-wrap:anywhere}
 .tg{align-self:flex-start;font-size:13px;font-weight:600;color:var(--d2);background:var(--d2s);padding:3px 8px;border-radius:8px}
 details.pages summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px}
@@ -208,3 +206,16 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 .bhead{margin:12px 0 4px;font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink);padding-left:10px;border-left:4px solid var(--cc)}
 .bhead:first-child{margin-top:4px}
 .bitem{display:flex;flex-direction:column;gap:4px;padding:6px 0 6px 14px;font-size:15px}
+
+/* Выполненные задания: остаются на месте, но компактные и серые */
+.task.done{padding:6px 0;opacity:.55;gap:10px}
+.task.done .ttl{color:var(--muted);text-decoration:line-through;font-size:13px;font-weight:500}
+.task.done .sum,.task.done .tg,.task.done details,.task.done .body>a{display:none}
+.task.done .cell,.task.done .cell .box{width:22px;height:22px}
+.task.done .cell input:checked+.box{background:var(--muted);border-color:var(--muted)}
+.task.done .cell input:checked+.box::after{width:6px;height:10px;border-width:0 2px 2px 0}
+@media (prefers-reduced-motion:no-preference){.task{transition:opacity .2s,padding .2s}}
+/* Все задания карточки сделаны — карточка тоже тише */
+.subj.all{opacity:.7;border-top-color:var(--line)}
+.subj.all .subj-h h2{font-size:15px;color:var(--muted)}
+.subj.all .dueline{display:none}
