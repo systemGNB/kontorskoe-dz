@@ -615,6 +615,15 @@ function setStatus(t) { $("status").textContent = t; }
 
 /* ---------- Загрузка данных ---------- */
 let loading = false;
+// Supabase отдаёт не больше 1000 строк за запрос — длинные таблицы (слова) читаем по страницам.
+async function selectAll(make) {
+  const all = [];
+  for (let from = 0; ; from += 1000) {
+    const r = await make().range(from, from + 999);
+    if (r.error) return { data: null, error: r.error };
+    all.push(...(r.data || [])); if (!r.data || r.data.length < 1000) return { data: all, error: null };
+  }
+}
 async function load() {
   if (!user || loading) return;
   loading = true;
@@ -624,7 +633,7 @@ async function load() {
       sb.from("done").select("homework_id"),
       sb.from("books").select("slug,title,course,aliases,pages"),
       sb.from("materials").select("id,chat_id,message_id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(300),
-      sb.from("vocab").select("lang,set_name,source,word,translation,example,sort").order("sort"),
+      selectAll(() => sb.from("vocab").select("lang,set_name,source,word,translation,example,sort").order("sort").order("id")),
       sb.from("resources").select("block,title,note,url,path,sort").order("sort"),
     ]);
     if (!vc.error) { vocab = vc.data || []; lsSet("kdz-vocab", vocab); }
@@ -699,7 +708,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "33";
+const APP_VERSION = "34";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
