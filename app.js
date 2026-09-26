@@ -180,6 +180,15 @@ function taskMaterials(x) {
   if (!x.telegram) return [];
   const own = mats.filter((m) => m.course === x.course);
   if (!own.length) return [];
+  // Задание пришло из Telegram-группы: вложения того же сообщения + всё, что прислали в группу
+  // за 3 часа до и после него (обычно аудио и файлы идут рядом с текстом задания).
+  const tg = /^tg-(m?\d+)-(\d+)$/.exec(x.id);
+  if (tg) {
+    const chatId = Number(tg[1].replace("m", "-")), msgId = Number(tg[2]);
+    const at = Date.parse(x.created_at || "") || 0;
+    const near = own.filter((m) => m.chat_id === chatId && (m.message_id === msgId || (at && Math.abs(Date.parse(m.posted_at) - at) <= 3 * 3600 * 1000)));
+    if (near.length) return near.sort((a, c) => Date.parse(a.posted_at) - Date.parse(c.posted_at)).slice(0, 10);
+  }
   const strong = [...x.telegram.matchAll(/(?:дорожк\S*|трек\S*|track|pista|аудио|audio|№)\s*(\d{1,3})/gi)].map((m) => m[1]);
   if (strong.length) {
     const hit = own.filter((m) => strong.some((n) => new RegExp("(^|[^\\d])" + n + "([^\\d]|$)").test((m.file_name || "") + " " + (m.caption || ""))));
@@ -317,7 +326,7 @@ function taskRow(x, onToggle) {
   if (x.telegram) {
     b.appendChild(el("span", "tg", "Из Telegram: " + x.telegram));
     const tm = taskMaterials(x);
-    if (tm.length) b.appendChild(matsDetails(tm, "Материалы из Telegram", false));
+    if (tm.length) b.appendChild(matsDetails(tm, /^tg-/.test(x.id) ? "Материалы к заданию" : "Материалы из Telegram", false));
   }
   if (x.link) { const a = el("a", null, /t\.me\//.test(x.link) ? "Открыть сообщение в Telegram →" : "Открыть в Google Классе →"); a.href = x.link; a.target = "_blank"; a.rel = "noopener"; b.appendChild(a); }
   li.append(cell, b);
@@ -524,10 +533,10 @@ async function load() {
   loading = true;
   try {
     const [h, d, bk, mt, vc, rs] = await Promise.all([
-      sb.from("homework").select("id,course,title,summary,due,link,telegram,pages").order("due", { ascending: true, nullsFirst: false }),
+      sb.from("homework").select("id,course,title,summary,due,link,telegram,pages,created_at").order("due", { ascending: true, nullsFirst: false }),
       sb.from("done").select("homework_id"),
       sb.from("books").select("slug,title,course,aliases,pages"),
-      sb.from("materials").select("id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(300),
+      sb.from("materials").select("id,chat_id,message_id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(300),
       sb.from("vocab").select("lang,set_name,source,word,translation,example,sort").order("sort"),
       sb.from("resources").select("block,title,note,url,path,sort").order("sort"),
     ]);
@@ -601,7 +610,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "28";
+const APP_VERSION = "29";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
