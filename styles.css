@@ -306,3 +306,9 @@ details.ocr .sum{white-space:pre-line;margin-top:6px}
 #dailyOut .dword:not(.hid){background:var(--surface);box-shadow:0 0 0 2px var(--accent) inset}
 .vrow:not(.hid) .vt{color:var(--accent);font-weight:600}
 .vrow:not(.hid) .vex{color:var(--ink);font-size:14px;opacity:.85}
+/* Разделы, которые пока не проходим: мельче и спокойнее */
+.vgrp.dim{border-color:color-mix(in srgb,var(--line) 60%,transparent);margin-top:4px}
+.vgrp.dim>summary{padding:5px 0;font-size:12px;color:var(--muted)}
+.vgrp.dim>summary b{font-weight:500}
+.vgrp.dim>summary .vcnt{font-size:10px}
+.vgrp.cur{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}

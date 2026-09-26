@@ -516,7 +516,8 @@ function renderVocab(panel) {
     const bm = /^(.+?)\s+—\s+(.+)$/.exec(g.name);
     const bName = bm ? bm[1] : null, gName = bm ? bm[2] : g.name;
     if (bName && bName !== book) { book = bName; out.appendChild(el("h4", "vbook", "📘 " + bName)); }
-    const gd = el("details", "vgrp"); gd.dataset.key = "g:" + g.name; gd.open = !!q || single || wasOpen.has(gd.dataset.key);
+    // Первый раздел — тот, что сейчас проходим (с него идут «Повтори слова»); остальные — мельче и бледнее.
+    const gd = el("details", "vgrp" + (g === groups[0] ? " cur" : " dim")); gd.dataset.key = "g:" + g.name; gd.open = !!q || single || wasOpen.has(gd.dataset.key);
     const gs = el("summary"); gs.append(el("b", null, gName), el("span", "vcnt", String(g.topics.reduce((n, t) => n + t.words.length, 0))));
     gd.appendChild(gs);
     g.topics.forEach((t) => {
@@ -767,7 +768,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "44";
+const APP_VERSION = "45";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
