@@ -506,9 +506,9 @@ document.querySelectorAll(".panel.vocab").forEach((p) => {
 });
 
 
-/* ---------- Слова на сегодня: 15 слов, каждый день 5 новых, 5 самых старых уходят ---------- */
+/* ---------- Слова на сегодня: 10 слов — 5 новых и 5 вчерашних на повторение ---------- */
 // День считается от личной даты старта (хранится в профиле пользователя — одинаково на телефоне и ноутбуке).
-const DAILY_NEW = 5, WINDOW_DAYS = 3;
+const DAILY_NEW = 5, WINDOW_DAYS = 2;
 let dailyLang = "es";
 try { dailyLang = localStorage.getItem("kdz-daily-lang") || "es"; } catch (e) {}
 function vocabStart() {
@@ -525,7 +525,7 @@ function dayIndex() {
   return Math.max(0, Math.round((Date.parse(today + "T00:00:00Z") - Date.parse(st + "T00:00:00Z")) / DAY));
 }
 function langWords(lang) { return vocab.filter((v) => v.lang === lang && !/^auto:/.test(v.id || "")); }
-/** Слова окна: [сегодняшние 5, вчерашние 5, позавчерашние 5]. Когда слова заканчиваются — начинаем круг заново. */
+/** Слова окна: [сегодняшние 5, вчерашние 5]. Когда слова заканчиваются — начинаем круг заново. */
 function dailyWindow(lang) {
   const all = langWords(lang); if (!all.length) return [];
   const n = dayIndex(), groups = [];
@@ -550,7 +550,7 @@ function renderDaily() {
     tabs.appendChild(b);
   });
   const out = $("dailyOut"); out.innerHTML = "";
-  const labels = ["Новые сегодня", "Со вчера — повтори", "Позавчера — последний раз"];
+  const labels = ["Новые сегодня", "Со вчера — повтори"];
   dailyWindow(dailyLang).forEach((g) => {
     out.appendChild(el("div", "dage", labels[g.age]));
     const ul = el("ul", "dlist age" + g.age);
@@ -708,7 +708,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "34";
+const APP_VERSION = "35";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
