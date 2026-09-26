@@ -35,14 +35,14 @@
   <section class="login" id="login" hidden>
     <h2>Вход</h2>
     <form id="loginForm">
-      <label for="loginIn">Логин (выдаёт староста)</label>
-      <input id="loginIn" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="например, Маша">
+      <label for="loginIn">Почта</label>
+      <input id="loginIn" type="text" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="name@gmail.com">
       <label for="pass">Пароль</label>
       <input id="pass" type="password" autocomplete="current-password" required>
       <button class="primary" type="submit">Войти</button>
     </form>
     <p class="msg" id="loginMsg" role="status"></p>
-    <p class="hint">Забыли пароль — напиши старосте. <a href="install.html">Как установить приложение на телефон</a></p>
+    <p class="hint">Забыли пароль — напиши человеку, имя которого начинается на «А» и заканчивается на «Я». <a href="install.html">Как установить приложение на телефон</a></p>
   </section>
 
   <!-- Приложение -->
@@ -101,7 +101,7 @@
 
     <footer>
       <p id="status" role="status">Загрузка…</p>
-      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 25</span></p>
+      <p><a href="install.html">Установить на телефон</a> · <span class="ver">версия 26</span></p>
       <details class="acct"><summary>Аккаунт</summary><p><span id="who"></span> · <button class="link" id="logoutBtn" type="button">Выйти</button></p><p class="hint">После выхода нужно будет снова ввести логин и пароль.</p></details>
     </footer>
   </div>

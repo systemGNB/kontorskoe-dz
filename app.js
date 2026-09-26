@@ -470,7 +470,7 @@ function renderVocab(panel) {
   const hide = panel.querySelector("input[type=checkbox]").checked, out = panel.querySelector(".vout");
   out.innerHTML = "";
   const list = vocab.filter((v) => v.lang === lang && (!q || (v.word + " " + v.translation).toLowerCase().includes(q)));
-  if (!list.length) { out.appendChild(el("p", "sum", q ? "Не найдено." : "Слов пока нет — пришли старосте список или набор из Quizlet.")); return; }
+  if (!list.length) { out.appendChild(el("p", "sum", q ? "Не найдено." : "Слов пока нет — пришли список или набор из Quizlet человеку, имя которого начинается на «А» и заканчивается на «Я».")); return; }
   let cur = null, ul;
   list.forEach((v) => {
     if (v.set_name !== cur) {
@@ -542,7 +542,7 @@ async function load() {
     lsSet("kdz-hw", hw); lsSet("kdz-done", [...mine]);
     const t = new Date();
     setStatus("Обновлено в " + t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) + ". Список обновляется сам.");
-    if (!hw.length) setStatus("Заданий пока нет — или твоей почты ещё нет в списке группы. Напиши старосте.");
+    if (!hw.length) setStatus("Заданий пока нет — или твоей почты ещё нет в списке группы. Напиши человеку, имя которого начинается на «А» и заканчивается на «Я».");
   } catch (e) {
     setStatus(navigator.onLine ? "Не удалось обновить задания. Показана последняя сохранённая версия." : "Нет интернета — показана последняя сохранённая версия.");
   } finally {
@@ -554,7 +554,7 @@ async function load() {
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(); });
 setInterval(() => { if (document.visibilityState === "visible") load(); }, 5 * 60 * 1000);
 
-/* ---------- Вход по логину и паролю ---------- */
+/* ---------- Вход по почте и паролю (короткий логин без «@» тоже работает) ---------- */
 // Логин — короткое имя; в Supabase он хранится как «имя@LOGIN_DOMAIN» (не настоящая почта, письма не отправляются).
 const LOGIN_DOMAIN = cfg.loginDomain;
 // Можно вводить по-русски: «Маша» → masha.
@@ -580,7 +580,7 @@ $("loginForm").addEventListener("submit", async (ev) => {
   const { error } = await sb.auth.signInWithPassword({ email: toEmail($("loginIn").value), password: $("pass").value });
   btn.disabled = false;
   if (!error) { loginMsg(""); $("pass").value = ""; return; }
-  if (error.status === 400 || /invalid/i.test(error.message || "")) loginMsg("Неверный логин или пароль.", true);
+  if (error.status === 400 || /invalid/i.test(error.message || "")) loginMsg("Неверная почта или пароль.", true);
   else if (error.status === 429) loginMsg("Слишком много попыток. Подожди пару минут.", true);
   else loginMsg(navigator.onLine ? "Не получилось войти (" + (error.message || error.status) + ")." : "Нет интернета.", true);
 });
@@ -599,7 +599,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "25";
+const APP_VERSION = "26";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
