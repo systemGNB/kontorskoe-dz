@@ -428,3 +428,9 @@ body.noscroll{overflow:hidden}
 .slide-th{font-weight:700;color:var(--accent);margin-bottom:6px;font-size:15px}
 .slide-t.raw{font-size:13px}
 .tsum{white-space:pre-line}
+/* Важные отметки в календаре */
+.day.ev{box-shadow:inset 0 0 0 2.5px #E5484D;font-weight:700}
+.day .evstar{position:absolute;top:-4px;right:-3px;font-size:11px;color:#E5484D;line-height:1}
+#calEvents{display:flex;flex-direction:column;gap:3px}
+.calev{font-size:13px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,#E5484D 14%,var(--surface));border:1.5px solid #E5484D;color:var(--ink)}
+.calev b{color:#E5484D}
