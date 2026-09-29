@@ -316,7 +316,12 @@ function taskRow(x, onToggle) {
   cb.addEventListener("change", () => toggleDone(x.id, cb.checked, li, cb, onToggle));
   const b = el("div", "body");
   const t = el("label", "ttl", x.title); t.htmlFor = cb.id; b.append(t);
-  if (x.summary) { const sp = el("p", "sum"); sp.appendChild(linkify(x.summary)); b.appendChild(sp); }
+  if (x.summary) {
+    // Длинное описание (текст упражнений): короткая часть сразу, упражнения — под «Что сделать».
+    const [head, ...rest] = x.summary.split("\n\nЧТО СДЕЛАТЬ:\n");
+    const sp = el("p", "sum tsum"); sp.appendChild(linkify(head)); b.appendChild(sp);
+    if (rest.length) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "📄 Что сделать — текст упражнений")); const t = el("p", "sum tsum"); t.textContent = rest.join("\n"); d.appendChild(t); b.appendChild(d); }
+  }
   const pages = taskPages(x);
   if (pages.length) {
     const det = el("details", "pages");
@@ -928,7 +933,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "65";
+const APP_VERSION = "66";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
