@@ -146,7 +146,8 @@ function taskPages(x) {
   const book = findBook(x.title, x.course) || findBook(x.title + " " + (x.summary || ""), x.course);
   if (book && book.pages) {
     const nums = pageNums(x.title + " " + (x.summary || "")).filter((n) => book.pages[String(n)]).slice(0, 20);
-    if (nums.length) return nums.map((n) => ({ label: book.title + ", стр. " + n, path: book.pages[String(n)] }));
+    // Свои картинки задания (например, вырезанное упражнение) — первыми, затем страницы учебника.
+    if (nums.length) return (x.pages || []).concat(nums.map((n) => ({ label: book.title + ", стр. " + n, path: book.pages[String(n)] })));
   }
   return x.pages || [];
 }
@@ -315,7 +316,7 @@ function taskRow(x, onToggle) {
   cb.addEventListener("change", () => toggleDone(x.id, cb.checked, li, cb, onToggle));
   const b = el("div", "body");
   const t = el("label", "ttl", x.title); t.htmlFor = cb.id; b.append(t);
-  if (x.summary) b.appendChild(el("p", "sum", x.summary));
+  if (x.summary) { const sp = el("p", "sum"); sp.appendChild(linkify(x.summary)); b.appendChild(sp); }
   const pages = taskPages(x);
   if (pages.length) {
     const det = el("details", "pages");
@@ -927,7 +928,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "64";
+const APP_VERSION = "65";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
