@@ -581,9 +581,20 @@ function dayIndex() {
   return Math.max(0, Math.round((Date.parse(today + "T00:00:00Z") - Date.parse(st + "T00:00:00Z")) / DAY));
 }
 function langWords(lang) { return vocab.filter((v) => v.lang === lang && !/^auto:/.test(v.id || "")); }
+/** Порядок для ежедневной подборки. Испанский: по очереди из разных тем (глаголы, прилагательные, связки…),
+ *  чтобы в одной подборке не было, например, одних предлогов. */
+function dailyWords(lang) {
+  const all = langWords(lang);
+  if (lang !== "es") return all;
+  const sets = [];
+  all.forEach((v) => { let s = sets.find((x) => x.name === v.set_name); if (!s) { s = { name: v.set_name, w: [] }; sets.push(s); } s.w.push(v); });
+  const out = [];
+  for (let i = 0; out.length < all.length; i++) sets.forEach((s) => { if (s.w[i]) out.push(s.w[i]); });
+  return out;
+}
 /** Слова окна: [сегодняшние 5, вчерашние 5, позавчерашние 5] + случайные из уже ушедших. Когда слова заканчиваются — начинаем круг заново. */
 function dailyWindow(lang) {
-  const all = langWords(lang); if (!all.length) return [];
+  const all = dailyWords(lang); if (!all.length) return [];
   const n = dayIndex(), groups = [];
   for (let k = 0; k < WINDOW_DAYS && n - k >= 0; k++) {
     const start = ((n - k) * DAILY_NEW) % all.length;
@@ -677,7 +688,7 @@ function maybeRecall() {
   if (!user || document.hidden) return;
   let last = 0; try { last = Number(localStorage.getItem("kdz-recall-at") || 0); } catch (e) {}
   if (Date.now() - last < 2 * 3600 * 1000 || Math.random() > 0.35) return;
-  const all = langWords(dailyLang); const passed = Math.min(all.length, Math.max(0, (dayIndex() - WINDOW_DAYS + 1) * DAILY_NEW));
+  const all = dailyWords(dailyLang); const passed = Math.min(all.length, Math.max(0, (dayIndex() - WINDOW_DAYS + 1) * DAILY_NEW));
   const pool = all.slice(0, passed);
   if (!pool.length) return;
   const v = pool[Math.floor(Math.random() * pool.length)];
@@ -933,7 +944,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "66";
+const APP_VERSION = "67";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
