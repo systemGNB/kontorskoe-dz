@@ -60,7 +60,7 @@ let user = null;
 // Постоянные цвета предметов (совпадают с расписанием).
 const COURSE_COLORS = {
   "ПОСИ-2": "posi", "ММСИ": "mmsi", "Испанский": "es",
-  "Английский": "en", "Анализ данных в социологии": "ads", "Социология маркетинга": "mkt", "Политическая социология": "pol",
+  "Английский": "en", "Анализ данных в социологии": "ads", "Социология маркетинга": "mkt", "Политическая социология": "pol", "Физкультура": "pe",
 };
 /** Цвет заливки предмета (календарь, полоски, галочки). */
 function courseColor(c) {
@@ -953,7 +953,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "68";
+const APP_VERSION = "69";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
