@@ -435,5 +435,3 @@ body.noscroll{overflow:hidden}
 .calev{font-size:13px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,#E5484D 14%,var(--surface));border:1.5px solid #E5484D;color:var(--ink)}
 .calev b{color:#E5484D}
 
-/* Перевод ДЗ по испанскому */
-.sum.ru{border-left:3px solid var(--k-es, #E0457B);padding-left:8px;}
