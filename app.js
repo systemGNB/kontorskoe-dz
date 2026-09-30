@@ -328,6 +328,40 @@ async function toggleDone(id, on, li, cb, onToggle) {
   }
 }
 
+// Перевод ДЗ по испанскому на русский: словарь типовых фраз из заданий преподавателя.
+const ES_NUM = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciséis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20,
+  primero: 1, primera: 1, segundo: 2, segunda: 2, tercero: 3, tercera: 3, cuarto: 4, cuarta: 4, quinto: 5, quinta: 5, sexto: 6, sexta: 6, séptimo: 7, séptima: 7, octavo: 8, octava: 8, noveno: 9, novena: 9, décimo: 10, décima: 10 };
+const ES_RU = [
+  [/\bdeberes\b/gi, "ДЗ"], [/\bpara el\b/gi, "к"],
+  [/\blunes\b/gi, "понедельнику"], [/\bmartes\b/gi, "вторнику"], [/\bmi[ée]rcoles\b/gi, "среде"], [/\bjueves\b/gi, "четвергу"], [/\bviernes\b/gi, "пятнице"], [/\bs[áa]bado\b/gi, "субботе"],
+  [/\bseguir las instrucciones de la (\d+) clase\b/gi, "по инструкции с $1-го занятия:"],
+  [/\bsobre la trama\b/gi, "по сюжету"], [/\bpor p[áa]gina\b/gi, "на страницу"],
+  [/\bpreguntas y respuestas\b/gi, "вопросов и ответов"], [/\bpreguntas\b/gi, "вопросы"], [/\brespuestas\b/gi, "ответы"],
+  [/\bapuntes culturales\b/gi, "культурные заметки"], [/\bvocabulario\b/gi, "лексику"], [/\bfrases\b/gi, "фраз"], [/\bconstrucciones\b/gi, "конструкциями"], [/\btexto\b/gi, "текст"], [/\bredacci[óo]n\b/gi, "сочинение"],
+  [/\b(?:el |los )?cap[íi]tulos?\s+(\d+)/gi, "главу $1"], [/\b(?:el |los )?cap[íi]tulos?\b/gi, "главу"],
+  [/\bleer y escuchar\b/gi, "прочитать и прослушать"], [/\bleer\b/gi, "прочитать"], [/\bescuchar\b/gi, "прослушать"], [/\bescribir\b/gi, "написать"], [/\bhacer\b/gi, "сделать"],
+  [/\bcompletar\b/gi, "заполнить"], [/\bresponder\b/gi, "ответить на"], [/\bcontestar\b/gi, "ответить на"], [/\bestudiar\b/gi, "выучить"], [/\baprender\b/gi, "выучить"], [/\brepasar\b/gi, "повторить"],
+  [/\btraducir\b/gi, "перевести"], [/\bpreparar\b/gi, "подготовить"], [/\bver\b/gi, "посмотреть"], [/\bmirar\b/gi, "посмотреть"], [/\bseguir\b/gi, "следовать"],
+  [/\bactividades\b/gi, "упражнения"], [/\bactividad\b/gi, "упражнение"], [/\bact\.\s*/gi, "упр. "], [/\bejercicios\b/gi, "упражнения"], [/\bejercicio\b/gi, "упражнение"], [/\bej\.\s*/gi, "упр. "],
+  [/\bp[áa]gs?\.\s*/gi, "стр. "], [/\bp[áa]ginas?\b/gi, "стр."], [/\bpp?\.\s*(?=\d)/gi, "стр. "],
+  [/\bunidad\b/gi, "раздел (Unidad)"], [/\blectura\b/gi, "чтение"], [/\bgram[áa]tica\b/gi, "Грамматика"], [/\bexamen\b/gi, "контрольная"], [/\bprueba\b/gi, "тест"],
+  [/\by los\b|\by las\b/gi, "и"], [/\by\b/gi, "и"], [/\bcon\b/gi, "с"], [/\bsobre\b/gi, "о"], [/\bpor\b/gi, "на"], [/\btodas?\b|\btodos\b/gi, "все"],
+  [/\b(?:el|la|los|las|del|al|de|en|un)\b\s*/gi, ""],
+];
+function esToRu(text) {
+  const out = []; let changed = false;
+  for (const raw of text.split("\n")) {
+    if (!/[a-záéíóúñ]{2}/i.test(raw) || /^\s*(aula|un d[íi]a en barcelona)\b/i.test(raw) && !/\(lectura\)/i.test(raw)) { out.push(raw); continue; }
+    let s = raw.replace(/^\s*(lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado)\s*$/i, "deberes para el $1")
+      .replace(/un d[íi]a en barcelona/gi, "\u0001").replace(/\b[a-záéíóúñ]+\b/gi, (w) => ES_NUM[w.toLowerCase()] ?? w);
+    for (const [re, to] of ES_RU) s = s.replace(re, to);
+    s = s.replace(/\u0001/g, "Un día en Barcelona").replace(/\s{2,}/g, " ").replace(/\s+([,.)])/g, "$1");
+    if (s !== raw) changed = true;
+    out.push(s);
+  }
+  return changed ? out.join("\n") : "";
+}
+
 function taskRow(x, onToggle) {
   const li = el("li", "task" + (mine.has(x.id) ? " done" : ""));
   const cell = el("label", "cell"); const cb = el("input"); cb.type = "checkbox"; cb.id = "hw-" + x.id; cb.checked = mine.has(x.id);
@@ -339,7 +373,11 @@ function taskRow(x, onToggle) {
   if (x.summary) {
     // Длинное описание (текст упражнений): короткая часть сразу, упражнения — под «Что сделать».
     const [head, ...rest] = x.summary.split("\n\nЧТО СДЕЛАТЬ:\n");
-    const sp = el("p", "sum tsum"); sp.appendChild(linkify(head)); b.appendChild(sp);
+    const ru = x.course === "Испанский" ? esToRu(head) : "";
+    if (ru) {
+      const rp = el("p", "sum tsum ru"); rp.textContent = ru; b.appendChild(rp);
+      const d = el("details", "ocr"); d.appendChild(el("summary", null, "🇪🇸 Текст на испанском")); const sp = el("p", "sum tsum"); sp.appendChild(linkify(head)); d.appendChild(sp); b.appendChild(d);
+    } else { const sp = el("p", "sum tsum"); sp.appendChild(linkify(head)); b.appendChild(sp); }
     if (rest.length) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "📄 Что сделать — текст упражнений")); const t = el("p", "sum tsum"); t.textContent = rest.join("\n"); d.appendChild(t); b.appendChild(d); }
   }
   const pages = taskPages(x);
@@ -964,7 +1002,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "70";
+const APP_VERSION = "71";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
