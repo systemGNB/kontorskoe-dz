@@ -435,3 +435,8 @@ body.noscroll{overflow:hidden}
 .calev{font-size:13px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,#E5484D 14%,var(--surface));border:1.5px solid #E5484D;color:var(--ink)}
 .calev b{color:#E5484D}
 
+
+/* Книга-ссылка в задании (Un día en Barcelona) */
+.bref{margin:6px 0;display:flex;flex-direction:column;gap:2px}
+.bref a{font-weight:600}
+.bref-t{font-size:.9em;opacity:.85}

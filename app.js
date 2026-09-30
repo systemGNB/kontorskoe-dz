@@ -150,33 +150,72 @@ function findBook(text, course) {
   const cand = books.filter((b) => (b.aliases || []).some((a) => t.includes(a)));
   return cand.find((b) => b.course === course) || cand[0] || null;
 }
-/** Страницы для задания: из учебника целиком (если распознаны), иначе — прикреплённые сканы. */
-function taskPages(x) {
-  // Страницы относятся к учебнику, под заголовком которого они написаны:
-  // «Aula plus / - p.127-128 … / Gramática / Unidad 10 p.58-63» → 127–128 из Aula Plus, 58–63 из грамматики.
+/** Разбор задания по учебникам: строки под заголовком книги («Aula plus», «Gramática», «Un día en Barcelona»)
+ *  относятся к ней. Для каждой книги — страницы, глава, упражнения и что сделать (глаголы из испанского текста). */
+const ES_TODO = [[/leer y escuchar/i, "прочитать и прослушать"], [/\bleer\b/i, "прочитать"], [/\bescuchar\b/i, "прослушать"],
+  [/apuntes culturales/i, "культурные заметки"], [/(\d+)\s*preguntas y respuestas/i, "$1 вопросов и ответов по сюжету"],
+  [/hacer (?:las )?actividades|\bactividades\b/i, "упражнения после главы"], [/\bescribir\b/i, "написать"], [/vocabulario/i, "выучить слова"]];
+function taskPlan(x) {
   const text = x.title + "\n" + (x.summary || "") + "\n" + (x.telegram || "");
-  const out = [], seen = new Set();
+  const segs = [];
   let cur = null;
   for (const line of text.split("\n")) {
     const b = findBook(line, x.course);
-    if (b) cur = b;
-    const book = b || cur;
-    if (!book || !book.pages) continue;
-    const add = (n, pre) => {
-      const key = book.slug + ":" + n;
-      if (seen.has(key) || !book.pages[String(n)]) return;
-      seen.add(key); out.push({ label: book.title + ", " + pre + "стр. " + n, path: book.pages[String(n)] });
-    };
-    for (const n of pageNums(line)) add(n, "");
-    // «el capítulo cuatro» / «главу 4» → все страницы главы (карта глав — в books.json, поле chapters).
-    const ch = book.pages.chapters && line.match(/(?:cap[íi]tulo|глав\S*)\s+(\d+|[a-záéíóúñ]+)/i);
+    if (b && (!cur || cur.book !== b)) { cur = segs.find((s) => s.book === b); if (!cur) segs.push(cur = { book: b, pages: [], ch: null, acts: [], unit: null, todo: [] }); }
+    if (!cur || !cur.book.pages) continue;
+    const book = cur.book;
+    for (const n of pageNums(line)) if (!cur.pages.includes(n)) cur.pages.push(n);
+    const ch = line.match(/(?:cap[íi]tulo|глав\S*)\s+(\d+|[a-záéíóúñ]+)/i);
     const cn = ch && (/^\d+$/.test(ch[1]) ? ch[1] : String(ES_NUM[ch[1].toLowerCase()] || ""));
-    const r = cn && book.pages.chapters[cn];
-    if (r) for (let n = r[0]; n <= r[1]; n++) add(n, "глава " + cn + " — ");
+    if (cn) cur.ch = cn;
+    const u = line.match(/\bunidad\s+(\d+)/i); if (u) cur.unit = u[1];
+    for (const m of line.matchAll(/\bact(?:ividad(?:es)?|s)?\.?\s*(\d+(?:\s*[-–,]\s*\d+)*)/gi)) cur.acts.push(m[1].replace(/\s+/g, ""));
+    for (const [re, ru] of ES_TODO) { const m = line.match(re); if (m) { const t = ru.replace("$1", m[1] || ""); if (!cur.todo.includes(t)) cur.todo.push(t); } }
+    if (/прочитать и прослушать/.test(cur.todo.join())) cur.todo = cur.todo.filter((t) => t !== "прочитать" && t !== "прослушать");
+  }
+  return segs.filter((s) => s.pages.length || s.ch || s.unit);
+}
+const pagesText = (ns) => { const s = ns.slice().sort((a, b) => a - b), out = []; for (const n of s) { const l = out[out.length - 1]; if (l && n === l[1] + 1) l[1] = n; else out.push([n, n]); } return out.map(([a, b]) => (a === b ? a : a + "–" + b)).join(", "); };
+/** Короткое конкретное название вместо «sábado» / «Deberes para el viernes»: что по какой книге. */
+function planTitle(x, plan) {
+  if (!plan.length || !/^(дз\b|д\/з|deberes|tarea|para el|(?:el )?(lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo))/i.test(x.title.trim()) || x.title.length > 60) return x.title;
+  return plan.map((s) => {
+    const name = s.book.title.replace(/\s*\(.*\)|\s+Elemental.*$|\s+\d+$/g, "");
+    if (s.book.pages.link_only && s.ch) return name + ": глава " + s.ch;
+    return name + ": " + [s.unit && "Unidad " + s.unit, s.pages.length && "стр. " + pagesText(s.pages), s.acts.length && "упр. " + s.acts.join(", ").replace(/,(?=\S)/g, ", ")].filter(Boolean).join(", ");
+  }).join(" · ");
+}
+/** Страницы для задания: свои картинки задания и сканы учебников (кроме книг «только ссылка»). */
+function taskPages(x, plan = taskPlan(x)) {
+  const out = [];
+  for (const s of plan) {
+    const book = s.book;
+    if (book.pages.link_only) continue;
+    const add = (n, pre) => { if (book.pages[String(n)] && !out.some((o) => o.path === book.pages[String(n)])) out.push({ label: book.title + ", " + pre + "стр. " + n, path: book.pages[String(n)] }); };
+    s.pages.forEach((n) => add(n, ""));
+    const r = s.ch && book.pages.chapters && book.pages.chapters[s.ch];
+    if (r) for (let n = r[0]; n <= r[1]; n++) add(n, "глава " + s.ch + " — ");
   }
   // Свои картинки задания (например, вырезанное упражнение) — первыми, затем страницы учебников.
   return (x.pages || []).concat(out.slice(0, 30));
 }
+/** Книги «только ссылка» (Un día en Barcelona): ссылка на файл, открывается на главе; ниже — что сделать. */
+function bookRefs(plan, box) {
+  for (const s of plan.filter((s) => s.book.pages.link_only)) {
+    const files = bookPdfs(s.book); if (!files.length) continue;
+    const r = s.ch && s.book.pages.chapters && s.book.pages.chapters[s.ch];
+    const idx = r ? pdfIndex(s.book, r[0]) : null;
+    const d = el("div", "bref");
+    const a = el("a", null, "📖 " + s.book.title + (s.ch ? " — глава " + s.ch + (r ? " (стр. " + r[0] + "–" + r[1] + ")" : "") : "") + " →");
+    a.href = "#"; a.target = "_blank"; a.rel = "noopener";
+    signedUrls([files[0]]).then(([u]) => { a.href = u + (idx ? "#page=" + idx : ""); }).catch(() => {});
+    d.appendChild(a);
+    if (s.todo.length) d.appendChild(el("span", "bref-t", "Сделать: " + s.todo.join(", ")));
+    box.appendChild(d);
+  }
+}
+/** Номер страницы в PDF по напечатанному номеру (из карты страниц: books/<slug>/0042.jpg → 42). */
+function pdfIndex(book, printed) { const p = book.pages[String(printed)]; const m = p && p.match(/(\d+)\.jpg$/); return m ? Number(m[1]) : null; }
 
 const urlCache = new Map();
 async function signedUrls(paths) {
@@ -345,14 +384,16 @@ function taskRow(x, onToggle) {
   const box = el("span", "box"); cell.append(cb, box);
   cb.addEventListener("change", () => toggleDone(x.id, cb.checked, li, cb, onToggle));
   const b = el("div", "body");
-  const t = el("label", "ttl", x.title); t.htmlFor = cb.id; b.append(t);
+  const plan = taskPlan(x);
+  const t = el("label", "ttl", planTitle(x, plan)); t.htmlFor = cb.id; b.append(t);
   if (x.summary) {
     // Длинное описание (текст упражнений): короткая часть сразу, упражнения — под «Что сделать».
     const [head, ...rest] = x.summary.split("\n\nЧТО СДЕЛАТЬ:\n");
     const sp = el("p", "sum tsum"); sp.appendChild(linkify(head)); b.appendChild(sp);
     if (rest.length) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "📄 Что сделать — текст упражнений")); const t = el("p", "sum tsum"); t.textContent = rest.join("\n"); d.appendChild(t); b.appendChild(d); }
   }
-  const pages = taskPages(x);
+  bookRefs(plan, b);
+  const pages = taskPages(x, plan);
   if (pages.length) {
     const det = el("details", "pages");
     det.appendChild(el("summary", null, "Страницы учебника (" + pages.length + ")"));
@@ -974,7 +1015,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "73";
+const APP_VERSION = "74";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
