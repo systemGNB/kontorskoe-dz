@@ -162,14 +162,20 @@ function taskPages(x) {
     if (b) cur = b;
     const book = b || cur;
     if (!book || !book.pages) continue;
-    for (const n of pageNums(line)) {
+    const add = (n, pre) => {
       const key = book.slug + ":" + n;
-      if (seen.has(key) || !book.pages[String(n)]) continue;
-      seen.add(key); out.push({ label: book.title + ", стр. " + n, path: book.pages[String(n)] });
-    }
+      if (seen.has(key) || !book.pages[String(n)]) return;
+      seen.add(key); out.push({ label: book.title + ", " + pre + "стр. " + n, path: book.pages[String(n)] });
+    };
+    for (const n of pageNums(line)) add(n, "");
+    // «el capítulo cuatro» / «главу 4» → все страницы главы (карта глав — в books.json, поле chapters).
+    const ch = book.pages.chapters && line.match(/(?:cap[íi]tulo|глав\S*)\s+(\d+|[a-záéíóúñ]+)/i);
+    const cn = ch && (/^\d+$/.test(ch[1]) ? ch[1] : String(ES_NUM[ch[1].toLowerCase()] || ""));
+    const r = cn && book.pages.chapters[cn];
+    if (r) for (let n = r[0]; n <= r[1]; n++) add(n, "глава " + cn + " — ");
   }
   // Свои картинки задания (например, вырезанное упражнение) — первыми, затем страницы учебников.
-  return (x.pages || []).concat(out.slice(0, 20));
+  return (x.pages || []).concat(out.slice(0, 30));
 }
 
 const urlCache = new Map();
@@ -1002,7 +1008,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "71";
+const APP_VERSION = "72";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
