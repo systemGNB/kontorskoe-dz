@@ -152,13 +152,24 @@ function findBook(text, course) {
 }
 /** Страницы для задания: из учебника целиком (если распознаны), иначе — прикреплённые сканы. */
 function taskPages(x) {
-  const book = findBook(x.title, x.course) || findBook(x.title + " " + (x.summary || ""), x.course);
-  if (book && book.pages) {
-    const nums = pageNums(x.title + " " + (x.summary || "")).filter((n) => book.pages[String(n)]).slice(0, 20);
-    // Свои картинки задания (например, вырезанное упражнение) — первыми, затем страницы учебника.
-    if (nums.length) return (x.pages || []).concat(nums.map((n) => ({ label: book.title + ", стр. " + n, path: book.pages[String(n)] })));
+  // Страницы относятся к учебнику, под заголовком которого они написаны:
+  // «Aula plus / - p.127-128 … / Gramática / Unidad 10 p.58-63» → 127–128 из Aula Plus, 58–63 из грамматики.
+  const text = x.title + "\n" + (x.summary || "") + "\n" + (x.telegram || "");
+  const out = [], seen = new Set();
+  let cur = null;
+  for (const line of text.split("\n")) {
+    const b = findBook(line, x.course);
+    if (b) cur = b;
+    const book = b || cur;
+    if (!book || !book.pages) continue;
+    for (const n of pageNums(line)) {
+      const key = book.slug + ":" + n;
+      if (seen.has(key) || !book.pages[String(n)]) continue;
+      seen.add(key); out.push({ label: book.title + ", стр. " + n, path: book.pages[String(n)] });
+    }
   }
-  return x.pages || [];
+  // Свои картинки задания (например, вырезанное упражнение) — первыми, затем страницы учебников.
+  return (x.pages || []).concat(out.slice(0, 20));
 }
 
 const urlCache = new Map();
@@ -953,7 +964,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "69";
+const APP_VERSION = "70";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
