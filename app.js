@@ -82,7 +82,11 @@ function badge(due) {
 /* ---------- Календарь ---------- */
 const LEGEND_SHORT = { "Анализ данных в социологии": "Анализ данных", "Социология маркетинга": "Соц. маркетинга" };
 /** Отметки только для календаря: resources/events.json в данных, title = дата, note = текст. */
-function calEvents() { return res.filter((r) => r.block === "events" && /^\d{4}-\d\d-\d\d$/.test(r.title)).map((r) => ({ date: r.title, text: r.note || "" })); }
+// Отметка может начинаться со своего значка («🕯️ Сдать …»); без него — ★.
+function calEvents() { return res.filter((r) => r.block === "events" && /^\d{4}-\d\d-\d\d$/.test(r.title)).map((r) => {
+  const m = (r.note || "").match(/^(\p{Extended_Pictographic}\uFE0F?)\s*/u);
+  return { date: r.title, icon: m ? m[1] : "★", text: m ? r.note.slice(m[0].length) : r.note || "" };
+}); }
 function renderCal() {
   const g = $("grid"); g.innerHTML = "";
   $("monthT").textContent = MONN[view.getUTCMonth()] + " " + view.getUTCFullYear();
@@ -106,14 +110,14 @@ function renderCal() {
       b.title = courses.join(", ");
     }
     b.appendChild(el("span", "n", String(d.getUTCDate())));
-    if (evs.length) { b.classList.add("ev"); b.appendChild(el("span", "evstar", "★")); b.title = (b.title ? b.title + " · " : "") + evs.map((e) => e.text).join(" · "); }
+    if (evs.length) { b.classList.add("ev"); b.appendChild(el("span", "evstar", evs[0].icon)); b.title = (b.title ? b.title + " · " : "") + evs.map((e) => e.text).join(" · "); }
     b.addEventListener("click", () => { sel = sel === ds ? null : ds; schedDate = null; render(); });
     g.appendChild(b);
   }
   // Важные отметки месяца (только календарь, не задания).
   const evBox = $("calEvents"); evBox.innerHTML = "";
   calEvents().filter((e) => e.date.slice(0, 7) === iso(view).slice(0, 7)).forEach((e) => {
-    const r = el("div", "calev"); r.append(el("b", null, "★ " + human(e.date)), document.createTextNode(" — " + e.text)); evBox.appendChild(r);
+    const r = el("div", "calev"); r.append(el("b", null, e.icon + " " + human(e.date)), document.createTextNode(" — " + e.text)); evBox.appendChild(r);
   });
   const lg = $("legend"); lg.innerHTML = "";
   [...new Set(hw.map((x) => x.course))].sort().forEach((c) => {
@@ -1015,7 +1019,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "74";
+const APP_VERSION = "75";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
