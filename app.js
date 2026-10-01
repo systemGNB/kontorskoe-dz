@@ -938,19 +938,27 @@ async function load() {
   if (!user || loading) return;
   loading = true;
   try {
-    const [h, d, bk, mt, vc, rs] = await Promise.all([
+    const [h, d, mt, rs] = await Promise.all([
       sb.from("homework").select("id,course,title,summary,due,link,telegram,pages,created_at").order("due", { ascending: true, nullsFirst: false }),
       sb.from("done").select("homework_id"),
-      sb.from("books").select("slug,title,course,aliases,pages"),
       sb.from("materials").select("id,chat_id,message_id,course,kind,file_name,caption,path,duration,posted_at,tg_link,text,lecture").order("posted_at", { ascending: false }).limit(1000),
-      selectAll(() => sb.from("vocab").select("lang,set_name,source,word,translation,example,sort").order("sort").order("id")),
       sb.from("resources").select("block,title,note,url,path,sort").order("sort"),
     ]);
-    if (!vc.error) { vocab = vc.data || []; lsSet("kdz-vocab", vocab); }
     if (!rs.error) { res = rs.data || []; lsSet("kdz-res", res); }
+    // Лексика и учебники большие и меняются редко: скачиваем их, только когда изменилась их версия
+    // (её считает синхронизация — resources, block «meta»). Без версии — как раньше, каждый раз.
+    const ver = ((rs.data || []).find((r) => r.block === "meta" && r.title === "data-version") || {}).note || "";
+    if (!ver || ver !== lsGet("kdz-ver", "") || !vocab.length || !books.length) {
+      const [bk, vc] = await Promise.all([
+        sb.from("books").select("slug,title,course,aliases,pages"),
+        selectAll(() => sb.from("vocab").select("lang,set_name,source,word,translation,example,sort").order("sort").order("id")),
+      ]);
+      if (!vc.error) { vocab = vc.data || []; lsSet("kdz-vocab", vocab); }
+      if (!bk.error) { books = bk.data || []; lsSet("kdz-books", books); }
+      if (!vc.error && !bk.error && ver) lsSet("kdz-ver", ver);
+    }
     // «#lecture» — служебные метки даты лекции от бота, сами по себе не показываем.
     if (!mt.error) { mats = (mt.data || []).filter((m) => m.file_name !== "#lecture"); lsSet("kdz-mat", mats); }
-    if (!bk.error) { books = bk.data || []; lsSet("kdz-books", books); }
     if (h.error) throw h.error;
     if (d.error) throw d.error;
     hw = h.data || [];
@@ -1007,7 +1015,7 @@ $("loginForm").addEventListener("submit", async (ev) => {
 $("logoutBtn").addEventListener("click", async () => {
   if (!confirm("Выйти? Чтобы войти снова, понадобятся логин и пароль.")) return;
   await sb.auth.signOut();
-  lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); lsDel("kdz-mat"); lsDel("kdz-vocab"); lsDel("kdz-res"); hw = []; books = []; mats = []; vocab = []; res = []; mine = new Set();
+  lsDel("kdz-hw"); lsDel("kdz-done"); lsDel("kdz-books"); lsDel("kdz-mat"); lsDel("kdz-vocab"); lsDel("kdz-res"); lsDel("kdz-ver"); hw = []; books = []; mats = []; vocab = []; res = []; mine = new Set();
 });
 
 sb.auth.onAuthStateChange((event, session) => {
@@ -1019,7 +1027,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "75";
+const APP_VERSION = "76";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
