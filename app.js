@@ -127,8 +127,33 @@ function renderCal() {
 }
 
 /* ---------- Задания ---------- */
+/** Испанский и английский после срока остаются в ленте до конца пары, к которой задано.
+ *  Испанский сдаётся за день до пары — ищем пару со следующего дня; английский — с самого дня срока. */
+const LANG_KEEP = { "Испанский": 1, "Английский": 0 };
+function mskNow() {
+  try { return new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date()); }
+  catch (e) { return new Date().toISOString().slice(11, 16); }
+}
+/** Конец пары, до которой задание ещё в ленте: { day, end } или null. */
+function classEnd(x) {
+  if (!x.due || !(x.course in LANG_KEEP)) return null;
+  const d0 = new Date(x.due + "T00:00:00Z");
+  for (let k = LANG_KEEP[x.course]; k <= LANG_KEEP[x.course] + 6; k++) {
+    const d = new Date(d0.getTime() + k * 86400000);
+    const ps = (SCHED[d.getUTCDay()] || []).filter((p) => p.hw === x.course);
+    if (ps.length) return { day: iso(d), end: ps[ps.length - 1].e };
+  }
+  return null;
+}
+/** Задание ещё актуально: срок не прошёл, а у языков — пара ещё не закончилась. */
+function isCurrent(x) {
+  if (!x.due || gap(x.due) >= 0) return true;
+  const c = classEnd(x);
+  return !!c && today + " " + mskNow() < c.day + " " + c.end;
+}
 function dueLine(x) {
-  const [t, cls] = badge(x.due);
+  let [t, cls] = badge(x.due);
+  if (x.due && gap(x.due) < 0 && isCurrent(x)) { const c = classEnd(x); t = (c.day === today ? "пара сегодня до " : "пара " + human(c.day) + " до ") + c.end; cls = "b0"; }
   const w = el("span", "dueline");
   if (x.due) w.appendChild(el("span", "dd", "сдать " + human(x.due)));
   w.appendChild(el("span", "badge " + cls, t));
@@ -352,7 +377,7 @@ function celebrate(fromEl, course) {
   const colors = [cc || "#5B3FA8", "#FFD43B", "#FF6B6B", "#6EA8FE", "#5ED3A9", "#B197FC"];
   confetti({ particleCount: 70, spread: 75, startVelocity: 32, origin, colors, scalar: 0.9, ticks: 160, zIndex: 9999 });
   // Все текущие задания сделаны — большой салют с двух сторон.
-  const cur = hw.filter((x) => !x.due || gap(x.due) >= 0);
+  const cur = hw.filter(isCurrent);
   if (cur.length && cur.every((x) => mine.has(x.id))) {
     const end = Date.now() + 1200;
     (function frame() {
@@ -505,10 +530,10 @@ function render() {
     if (its.length) subjectBlocks(its, list); else list.appendChild(el("p", "empty", "На этот день сдавать нечего."));
   } else {
     $("filter").hidden = true;
-    const cur = hw.filter((x) => !x.due || gap(x.due) >= 0);
+    const cur = hw.filter(isCurrent);
     if (cur.length) subjectBlocks(cur, list); else list.appendChild(el("p", "empty", hw.length ? "Ближайших сроков нет." : "Заданий пока нет."));
   }
-  const pastI = hw.filter((x) => x.due && gap(x.due) < 0); const pb = $("pastBox");
+  const pastI = hw.filter((x) => !isCurrent(x)); const pb = $("pastBox");
   pb.hidden = !pastI.length || !!sel;
   if (pastI.length) { $("pastT").textContent = "Прошедшие сроки (" + pastI.length + ")"; const p = $("past"); p.innerHTML = ""; subjectBlocks(pastI, p); }
 }
@@ -1027,7 +1052,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "76";
+const APP_VERSION = "77";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
