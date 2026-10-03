@@ -522,7 +522,7 @@ $("nextW").addEventListener("click", () => { schedDate = addD(schedDate, 7); ren
 
 /* ---------- Отрисовка ---------- */
 function render() {
-  renderCal(); renderSched(); renderBooks(); renderMatsBox(); renderCounts(); renderDaily();
+  renderCal(); renderSched(); renderBooks(); renderMatsBox(); renderCounts(); renderDaily(); renderPinned();
   const list = $("list"); list.innerHTML = "";
   if (sel) {
     $("filter").hidden = false; $("filterT").textContent = "Срок: " + human(sel);
@@ -731,6 +731,26 @@ function showWordBar(li, v) {
   wordBar.hidden = false;
 }
 document.addEventListener("click", () => { if (!wordBar.hidden) hideWordBar(); });
+/** Закреплённое наверху (resources/pinned.json): note = «до какой даты|подпись», url — ссылка (квизлет). */
+function renderPinned() {
+  const box = $("pinnedBox"); box.innerHTML = "";
+  const items = res.filter((r) => r.block === "pinned" && r.url).map((r) => { const [until, cap] = (r.note || "").split("|"); return { ...r, until, cap }; })
+    .filter((r) => !r.until || r.until >= today);
+  box.hidden = !items.length;
+  if (!items.length) return;
+  const cap = items.find((r) => r.cap)?.cap;
+  box.appendChild(el("div", "pin-tag", "🇪🇸 Quizlet · испанский"));
+  if (cap) box.appendChild(el("h2", "pin-cap", cap));
+  const row = el("div", "pin-row");
+  items.forEach((r) => {
+    const a = el("a", "pin-card"); a.href = r.url; a.target = "_blank"; a.rel = "noopener";
+    a.append(el("span", "pin-ico", "💃"), el("span", "pin-t", r.title), el("span", "pin-go", "Учить →"));
+    row.appendChild(a);
+  });
+  box.appendChild(row);
+  const last = items.map((r) => r.until).filter(Boolean).sort().pop();
+  if (last) box.appendChild(el("p", "pin-until", "Висит здесь до " + human(last).replace(/^[^,]+, /, "")));
+}
 function renderDaily() {
   const box = $("dailyBox"); if (!box) return;
   const langs = ["es", "en"].filter((l) => langWords(l).length);
@@ -1052,7 +1072,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "77";
+const APP_VERSION = "78";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
