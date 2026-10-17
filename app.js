@@ -955,15 +955,13 @@ async function renderPrim() {
     if (r.note) it.appendChild(el("p", "sum", r.note));
     out.appendChild(it);
   });
-  const days = renderLectures(out, "ПОСИ-2");
-  const tg = mats.filter((m) => PRIM_COURSES.includes(m.course) && !(m.course === "ПОСИ-2" && m.kind === "photo")).slice(0, 15);
-  if (tg.length) { out.appendChild(el("div", "vset", "Файлы из Telegram (ПОСИ, матстатистика)")); const box = el("div"); out.appendChild(box); renderMats(box, tg, true); }
-  if (!list.length && !tg.length && !days.length) out.appendChild(el("p", "sum", "Пока пусто."));
+  // Только ссылки на учебники (лекции и файлы из Telegram здесь не показываем).
+  if (!list.length) out.appendChild(el("p", "sum", "Пока пусто."));
 }
 function renderCounts() {
   $("esCnt").textContent = vocab.filter((v) => v.lang === "es").length || "";
   $("enCnt").textContent = vocab.filter((v) => v.lang === "en").length || "";
-  $("primCnt").textContent = (res.filter((r) => r.block === "primakov").length + mats.filter((m) => m.course === "ПОСИ-2").length) || "";
+  $("primCnt").textContent = res.filter((r) => r.block === "primakov").length || "";
   document.querySelectorAll("[data-cnt]").forEach((x) => { x.textContent = mats.filter((m) => m.course === x.dataset.cnt).length || ""; });
 }
 
@@ -1073,7 +1071,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "79";
+const APP_VERSION = "80";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
