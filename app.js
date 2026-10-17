@@ -93,7 +93,9 @@ function renderWeek() {
   const box = $("weekBar"); box.hidden = !week.length;
   if (!week.length) return;
   const done = week.filter((x) => mine.has(x.id)).length, pct = Math.round((done / week.length) * 100);
-  $("weekTxt").textContent = done + " из " + week.length + " · " + pct + "%";
+  const end = iso(new Date(new Date(today + "T00:00:00Z").getTime() + 7 * 86400000));
+  $("weekPct").textContent = pct + "%";
+  $("weekTxt").textContent = "Сделано " + done + " из " + week.length + " " + plural(week.length, "задания", "заданий", "заданий") + " · срок до " + human(end).replace(/^[^,]+, /, "") + (done === week.length ? " — всё готово!" : "");
   $("weekFill").style.width = pct + "%";
   box.classList.toggle("full", done === week.length);
 }
@@ -1082,7 +1084,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "81";
+const APP_VERSION = "82";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
