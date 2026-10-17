@@ -87,7 +87,18 @@ function calEvents() { return res.filter((r) => r.block === "events" && /^\d{4}-
   const m = (r.note || "").match(/^(\p{Extended_Pictographic}\uFE0F?)\s*/u);
   return { date: r.title, icon: m ? m[1] : "★", text: m ? r.note.slice(m[0].length) : r.note || "" };
 }); }
+/** Полоска «сделано за неделю»: задания со сроком от сегодня до того же дня через неделю (включительно). */
+function renderWeek() {
+  const week = hw.filter((x) => x.due && gap(x.due) >= 0 && gap(x.due) <= 7);
+  const box = $("weekBar"); box.hidden = !week.length;
+  if (!week.length) return;
+  const done = week.filter((x) => mine.has(x.id)).length, pct = Math.round((done / week.length) * 100);
+  $("weekTxt").textContent = done + " из " + week.length + " · " + pct + "%";
+  $("weekFill").style.width = pct + "%";
+  box.classList.toggle("full", done === week.length);
+}
 function renderCal() {
+  renderWeek();
   const g = $("grid"); g.innerHTML = "";
   $("monthT").textContent = MONN[view.getUTCMonth()] + " " + view.getUTCFullYear();
   ["пн","вт","ср","чт","пт","сб","вс"].forEach((w) => g.appendChild(el("div", "wd", w)));
@@ -1071,7 +1082,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "80";
+const APP_VERSION = "81";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

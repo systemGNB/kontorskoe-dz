@@ -458,3 +458,12 @@ body.noscroll{overflow:hidden}
 .pin-go{margin-top:auto;font-size:13px;font-weight:700;color:#FF2E7E}
 .pin-until{position:relative;margin:10px 0 0;font-size:12px;opacity:.9}
 @media (max-width:360px){.pin-row{grid-template-columns:1fr}}
+
+/* Полоска «сделано за неделю» — для мотивации, яркая, но спокойная */
+.weekbar{margin:4px 2px 14px}
+.wb-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px}
+.wb-l{color:var(--muted);font-weight:600}
+.wb-n{font-weight:700;color:var(--accent)}
+.wb-track{height:8px;border-radius:999px;background:var(--accent-soft);overflow:hidden}
+.wb-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#7C5CFF,#FF5FA2 60%,#FFB23E);transition:width .4s ease}
+.weekbar.full .wb-n::after{content:" 🎉"}
