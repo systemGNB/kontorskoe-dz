@@ -77,7 +77,7 @@ function badge(due) {
   if (g < 0) return ["срок прошёл", "bn"];
   if (g === 0) return ["сдать сегодня", "b0"];
   if (g === 1) return ["сдать завтра", "b1"];
-  return ["сдать через " + g + " " + plural(g, "день", "дня", "дней"), "b" + Math.min(g, 5)];
+  return [plural(g, "остался", "осталось", "осталось") + " " + g + " " + plural(g, "день", "дня", "дней") + " до сдачи", "b" + Math.min(g, 5)];
 }
 
 /* ---------- Календарь ---------- */
@@ -1087,7 +1087,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "87";
+const APP_VERSION = "88";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
