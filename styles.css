@@ -468,3 +468,13 @@ body.noscroll{overflow:hidden}
 .wb-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#7C5CFF,#FF5FA2 60%,#FFB23E);transition:width .4s ease}
 .wb-sub{margin-top:5px;font-size:12px;color:var(--muted)}
 .weekbar.full .wb-n::after{content:" 🎉"}
+
+/* Важное задание — ярко выделено */
+.task.hot{position:relative;margin:6px -8px;padding:12px 10px;border-top:0;border-radius:14px;
+  background:linear-gradient(135deg,rgba(255,46,126,.12),rgba(255,178,62,.14));
+  box-shadow:0 0 0 2px #FF2E7E inset, 0 6px 18px rgba(255,46,126,.22)}
+.task.hot .ttl{font-weight:800}
+.hot-tag{align-self:flex-start;display:inline-block;margin-bottom:4px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:800;color:#fff;
+  background:linear-gradient(90deg,#FF2E7E,#FF6A3D)}
+.task.hot.done{box-shadow:0 0 0 2px var(--line) inset;background:none}
+.task.hot.done .hot-tag{background:var(--muted)}

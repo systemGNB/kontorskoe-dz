@@ -422,13 +422,16 @@ const ES_NUM = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, 
   primero: 1, primera: 1, segundo: 2, segunda: 2, tercero: 3, tercera: 3, cuarto: 4, cuarta: 4, quinto: 5, quinta: 5, sexto: 6, sexta: 6, séptimo: 7, séptima: 7, octavo: 8, octava: 8, noveno: 9, novena: 9, décimo: 10, décima: 10 };
 
 function taskRow(x, onToggle) {
-  const li = el("li", "task" + (mine.has(x.id) ? " done" : ""));
+  // Важные задания (resources/highlight.json в данных: title = id задания) — ярко выделены.
+  const hot = res.some((r) => r.block === "highlight" && r.title === x.id);
+  const li = el("li", "task" + (mine.has(x.id) ? " done" : "") + (hot ? " hot" : ""));
   const cell = el("label", "cell"); const cb = el("input"); cb.type = "checkbox"; cb.id = "hw-" + x.id; cb.checked = mine.has(x.id);
   cb.setAttribute("aria-label", "Сделано: " + x.title);
   const box = el("span", "box"); cell.append(cb, box);
   cb.addEventListener("change", () => toggleDone(x.id, cb.checked, li, cb, onToggle));
   const b = el("div", "body");
   const plan = taskPlan(x);
+  if (hot) b.append(el("span", "hot-tag", "🔥 Важно"));
   const t = el("label", "ttl", planTitle(x, plan)); t.htmlFor = cb.id; b.append(t);
   if (x.summary) {
     // Длинное описание (текст упражнений): короткая часть сразу, упражнения — под «Что сделать».
@@ -1084,7 +1087,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "86";
+const APP_VERSION = "87";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
