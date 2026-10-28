@@ -203,8 +203,9 @@ function taskPlan(x) {
   const segs = [];
   let cur = null;
   for (const line of text.split("\n")) {
-    // Испанский: страницы без названия книги — из основного учебника Aula Plus.
-    const b = findBook(line, x.course) || (!cur && x.course === "Испанский" && pageNums(line).length ? books.find((bk) => bk.slug === "aula-plus-2") : null);
+    // Страницы без названия книги — из основного учебника: испанский — Aula Plus, английский — Upstream.
+    const MAIN = { "Испанский": "aula-plus-2", "Английский": "upstream-adv" };
+    const b = findBook(line, x.course) || (!cur && MAIN[x.course] && pageNums(line).length ? books.find((bk) => bk.slug === MAIN[x.course]) : null);
     if (b && (!cur || cur.book !== b)) { cur = segs.find((s) => s.book === b); if (!cur) segs.push(cur = { book: b, pages: [], ch: null, acts: [], unit: null, todo: [] }); }
     if (!cur || !cur.book.pages) continue;
     const book = cur.book;
@@ -1087,7 +1088,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "88";
+const APP_VERSION = "89";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
