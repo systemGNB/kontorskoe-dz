@@ -1039,8 +1039,8 @@ async function load() {
     if (!mt.error) { mats = (mt.data || []).filter((m) => m.file_name !== "#lecture"); lsSet("kdz-mat", mats); }
     if (h.error) throw h.error;
     if (d.error) throw d.error;
-    // Анализ данных: задание без срока не показываем (так договорились — без дедлайна это не ДЗ).
-    hw = (h.data || []).filter((x) => !(x.course === "Анализ данных в социологии" && !x.due));
+    // Без срока не показываем: всё из Google Класса (id «gc-…», включая объявления) и анализ данных.
+    hw = (h.data || []).filter((x) => x.due || !(/^gc-/.test(x.id) || x.course === "Анализ данных в социологии"));
     mine = new Set((d.data || []).map((r) => r.homework_id));
     lsSet("kdz-hw", hw); lsSet("kdz-done", [...mine]);
     const t = new Date();
@@ -1106,7 +1106,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "91";
+const APP_VERSION = "92";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
