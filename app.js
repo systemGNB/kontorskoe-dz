@@ -422,6 +422,23 @@ async function toggleDone(id, on, li, cb, onToggle) {
 const ES_NUM = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciséis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20,
   primero: 1, primera: 1, segundo: 2, segunda: 2, tercero: 3, tercera: 3, cuarto: 4, cuarta: 4, quinto: 5, quinta: 5, sexto: 6, sexta: 6, séptimo: 7, séptima: 7, octavo: 8, octava: 8, noveno: 9, novena: 9, décimo: 10, décima: 10 };
 
+/** Мы — группа 5. Если в задании таблица «Группа — Задание — Примечание», оставляем вступление
+ *  и строку только своей группы; строки других групп убираем. */
+const MY_GROUP = "5";
+function onlyMyGroup(text) {
+  const lines = text.split("\n");
+  const h = lines.findIndex((l) => /^\s*Группа\s.*Задани/i.test(l));
+  if (h < 0) return text;
+  const out = lines.slice(0, h + 1);
+  let rows = 0;
+  for (const l of lines.slice(h + 1)) {
+    const m = l.match(/^\s*(\d{1,2})\s+\S/);
+    if (m) { rows++; if (m[1] === MY_GROUP) out.push(l.trim().replace(/^(\d+)\s+/, "$1   ")); continue; }
+    if (rows && !l.trim()) continue;
+    out.push(l);
+  }
+  return rows ? out.join("\n").replace(/\n{3,}/g, "\n\n") : text;
+}
 function taskRow(x, onToggle) {
   // Важные задания (resources/highlight.json в данных: title = id задания) — ярко выделены.
   const hot = res.some((r) => r.block === "highlight" && r.title === x.id);
@@ -436,7 +453,7 @@ function taskRow(x, onToggle) {
   const t = el("label", "ttl", planTitle(x, plan)); t.htmlFor = cb.id; b.append(t);
   if (x.summary) {
     // Длинное описание (текст упражнений): короткая часть сразу, упражнения — под «Что сделать».
-    const [head, ...rest] = x.summary.split("\n\nЧТО СДЕЛАТЬ:\n");
+    const [head, ...rest] = onlyMyGroup(x.summary).split("\n\nЧТО СДЕЛАТЬ:\n");
     const sp = el("p", "sum tsum"); sp.appendChild(linkify(head)); b.appendChild(sp);
     if (rest.length) { const d = el("details", "ocr"); d.appendChild(el("summary", null, "📄 Что сделать — текст упражнений")); const t = el("p", "sum tsum"); t.textContent = rest.join("\n"); d.appendChild(t); b.appendChild(d); }
   }
@@ -1022,7 +1039,8 @@ async function load() {
     if (!mt.error) { mats = (mt.data || []).filter((m) => m.file_name !== "#lecture"); lsSet("kdz-mat", mats); }
     if (h.error) throw h.error;
     if (d.error) throw d.error;
-    hw = h.data || [];
+    // Анализ данных: задание без срока не показываем (так договорились — без дедлайна это не ДЗ).
+    hw = (h.data || []).filter((x) => !(x.course === "Анализ данных в социологии" && !x.due));
     mine = new Set((d.data || []).map((r) => r.homework_id));
     lsSet("kdz-hw", hw); lsSet("kdz-done", [...mine]);
     const t = new Date();
@@ -1088,7 +1106,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "89";
+const APP_VERSION = "90";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
