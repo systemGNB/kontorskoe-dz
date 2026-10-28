@@ -154,7 +154,7 @@ function classEnd(x) {
   const d0 = new Date(x.due + "T00:00:00Z");
   for (let k = LANG_KEEP[x.course]; k <= LANG_KEEP[x.course] + 6; k++) {
     const d = new Date(d0.getTime() + k * 86400000);
-    const ps = (SCHED[d.getUTCDay()] || []).filter((p) => p.hw === x.course);
+    const ps = schedOn(iso(d)).filter((p) => p.hw === x.course);
     if (ps.length) return { day: iso(d), end: ps[ps.length - 1].e };
   }
   return null;
@@ -515,6 +515,15 @@ const SCHED = {
       { s: "11:00", e: "12:20", n: "Политическая социология", t: "Практика", r: "ауд. 205-4, Остоженка, д. 38 с2", p: "Саблуков А.В." }],
   6: [{ s: "08:00", e: "10:50", n: "Испанский (второй иностранный язык)", t: "Практика", r: "ауд. 202, учебный корпус", p: "Харитонова М.А.", hw: "Испанский" }],
 };
+// Разовые замены расписания на конкретную дату (вместо обычного дня недели).
+const SCHED_DATE = {
+  // Испанский перенесён с субботы 31.10 на четверг 29.10: две пары с 11:00, перерыв 10 минут.
+  "2026-10-29": [
+    { s: "11:00", e: "12:20", n: "Испанский (второй иностранный язык) — перенос с субботы", t: "Практика", r: "аудитория — уточнить", p: "Харитонова М.А.", hw: "Испанский" },
+    { s: "12:30", e: "13:50", n: "Испанский (второй иностранный язык) — перенос с субботы", t: "Практика", r: "аудитория — уточнить", p: "Харитонова М.А.", hw: "Испанский" }],
+  "2026-10-31": [],
+};
+const schedOn = (ds) => SCHED_DATE[ds] || SCHED[new Date(ds + "T00:00:00Z").getUTCDay()] || [];
 const WDF = ["", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 const wdOf = (ds) => new Date(ds + "T00:00:00Z").getUTCDay();
 function addD(ds, k) { const d = new Date(ds + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + k); return iso(d); }
@@ -531,7 +540,7 @@ function renderSched() {
   const tabs = $("tabs"); tabs.innerHTML = "";
   for (let d = 1; d <= 6; d++) {
     const ds = addD(mon, d - 1);
-    const b = el("button", "tab" + (d === wd ? " on" : "") + ((SCHED[d] || []).length ? "" : " empty") + (ds === today ? " today" : ""));
+    const b = el("button", "tab" + (d === wd ? " on" : "") + (schedOn(ds).length ? "" : " empty") + (ds === today ? " today" : ""));
     b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", d === wd ? "true" : "false"); b.setAttribute("aria-label", human(ds));
     b.append(el("span", "tw", WDF[d]), el("span", "tn", String(new Date(ds + "T00:00:00Z").getUTCDate())));
     if (hw.some((x) => x.due === ds)) b.appendChild(el("span", "tdot"));
@@ -539,7 +548,7 @@ function renderSched() {
     tabs.appendChild(b);
   }
   const ol = $("pairs"); ol.innerHTML = "";
-  const list = SCHED[wd] || [];
+  const list = schedOn(schedDate);
   if (!list.length) ol.appendChild(el("li", "nopair", "Пар нет"));
   list.forEach((p) => {
     const li = el("li", "pair"); li.style.setProperty("--cc", p.hw ? courseColor(p.hw) : "var(--line)"); li.style.setProperty("--cct", p.hw ? courseText(p.hw) : "var(--muted)");
@@ -1107,7 +1116,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "93";
+const APP_VERSION = "94";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
