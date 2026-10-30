@@ -1050,6 +1050,9 @@ async function load() {
     if (d.error) throw d.error;
     // Google Класс (id «gc-…»): показываем только задания со сроком, который ещё не прошёл.
     // Анализ данных без срока тоже не показываем.
+    // Названия курсов из Google Класса приводим к предметам сайта (например «МСС-3_3бс(5)_…» → «МСС»).
+    const COURSE_FIX = [[/^мсс|матстат|математическ.*статист/i, "МСС"], [/ммси|методолог/i, "ММСИ"], [/институт/i, "Социология социальных институтов"]];
+    for (const x of h.data || []) { const f = COURSE_FIX.find(([re]) => re.test(x.course)); if (f) x.course = f[1]; }
     hw = (h.data || []).filter((x) => /^gc-/.test(x.id) ? x.due && gap(x.due) >= 0 : x.due || x.course !== "Анализ данных в социологии");
     mine = new Set((d.data || []).map((r) => r.homework_id));
     lsSet("kdz-hw", hw); lsSet("kdz-done", [...mine]);
@@ -1116,7 +1119,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "94";
+const APP_VERSION = "95";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
