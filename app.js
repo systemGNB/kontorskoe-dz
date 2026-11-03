@@ -293,8 +293,44 @@ function inEnglishClass(iso) {
   const msk = new Date(Date.parse(iso) + 3 * 3600000);
   return msk.getUTCDay() === 2 && msk.getUTCHours() * 60 + msk.getUTCMinutes() < 12 * 60 + 20;
 }
+/** Английский чат: что к чему относится. Идём по сообщениям после пары (вт до 12:20 — пара, не считаем):
+ *  описание без страниц (не Upstream) относится к файлу/ссылке рядом с ним — сначала к тому, что прямо под
+ *  описанием или прямо над ним. «Описание, файл, файл, описание» → 1-е описание к 1-му файлу, 2-е ко 2-му.
+ *  Описание со страницами — это Upstream: к нему прикрепляются страницы учебника, а не файлы.
+ *  Файлы без описания — просто материалы (показываются в «Учебники» → «Материалы из чата»). */
+function englishPairs() {
+  const byTask = new Map(), paired = new Set();
+  const tasks = hw.filter((h) => h.course === "Английский" && /^tg-/.test(h.id));
+  const msgOf = (id) => Number((/^tg-m?\d+-(\d+)$/.exec(id) || [])[1] || 0);
+  const taskMsgs = new Set(tasks.map((t) => msgOf(t.id)));
+  const items = [
+    ...tasks.map((t) => ({ t: "text", id: msgOf(t.id), at: Date.parse(t.created_at || ""), task: t,
+      upstream: pageNums(t.title + "\n" + (t.summary || "")).length > 0 })),
+    ...mats.filter((m) => m.course === "Английский" && !inEnglishClass(m.posted_at) && !taskMsgs.has(m.message_id))
+      .map((m) => ({ t: "file", id: m.message_id, at: Date.parse(m.posted_at), m })),
+  ].sort((a, b) => a.id - b.id);
+  const near = (a, b) => a && b && Math.abs(a.at - b.at) <= 60 * 60 * 1000;
+  const free = (it) => it && it.t === "text" && !it.upstream && !it.used;
+  items.forEach((it, i) => {
+    if (it.t !== "file") return;
+    const prev = items[i - 1], next = items[i + 1];
+    const host = free(prev) && near(prev, it) ? prev : free(next) && near(next, it) ? next : null;
+    if (!host) return;
+    host.used = true; paired.add(it.m.id);
+    byTask.set(host.task.id, [...(byTask.get(host.task.id) || []), it.m]);
+  });
+  return { byTask, paired };
+}
 function taskMaterials(x) {
   if (!x.telegram) return [];
+  if (x.course === "Английский" && /^tg-/.test(x.id)) {
+    const replyTo = Number((x.telegram.match(/ответ на #(\d+)/) || [])[1] || 0);
+    const msgId = Number((/^tg-m?\d+-(\d+)$/.exec(x.id) || [])[1] || 0);
+    const own = mats.filter((m) => m.course === "Английский" && (m.message_id === msgId || m.message_id === replyTo));
+    // Файл, названный в тексте задания по имени, тоже относится к нему.
+    const named = mats.filter((m) => m.course === "Английский" && m.file_name && (x.summary || "").includes(m.file_name.replace(/\.[^.]+$/, "")));
+    return [...new Set([...own, ...(englishPairs().byTask.get(x.id) || []), ...named])].sort((a, c) => a.message_id - c.message_id);
+  }
   // Если задание — ответ на более раннее сообщение («ответ на #123»), файл из того сообщения прикрепляем всегда.
   const replyTo = Number((x.telegram.match(/ответ на #(\d+)/) || [])[1] || 0);
   const own = mats.filter((m) => m.course === x.course && (x.course !== "Английский" || m.message_id === replyTo || !inEnglishClass(m.posted_at)));
@@ -607,6 +643,11 @@ function renderBooks() {
 }
 async function renderBookLinks() {
   const out = $("bookOut"); out.innerHTML = "";
+  // Файлы и ссылки из чата английского без описания задания — просто материалы (за последние 3 недели).
+  const { paired } = englishPairs();
+  const free = mats.filter((m) => m.course === "Английский" && !inEnglishClass(m.posted_at) && !paired.has(m.id)
+    && !hw.some((h) => /^tg-/.test(h.id) && h.id.endsWith("-" + m.message_id)) && Date.parse(m.posted_at) > Date.now() - 21 * DAY);
+  if (free.length) out.appendChild(matsDetails(free, "📎 Материалы из чата английского (" + free.length + ")", false));
   const all = books.filter((b) => bookPdfs(b).length);
   if (!all.length) { out.appendChild(el("p", "sum", "Учебники ещё загружаются — загляни через несколько минут.")); return; }
   let urls = [];
@@ -1133,7 +1174,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "98";
+const APP_VERSION = "99";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
