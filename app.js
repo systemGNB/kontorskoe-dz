@@ -305,8 +305,14 @@ function taskMaterials(x) {
   if (tg) {
     const chatId = Number(tg[1].replace("m", "-")), msgId = Number(tg[2]);
     const at = Date.parse(x.created_at || "") || 0;
-    const near = own.filter((m) => m.chat_id === chatId && (m.message_id === msgId || m.message_id === replyTo || (at && Math.abs(Date.parse(m.posted_at) - at) <= 3 * 3600 * 1000)));
-    if (near.length) return near.sort((a, c) => Date.parse(a.posted_at) - Date.parse(c.posted_at)).slice(0, 10);
+    // Файлы, присланные прямо перед заданием (до 60 минут и не раньше предыдущего задания из этого чата), —
+    // это то, к чему относится задание: «сначала файл, под ним — что с ним сделать».
+    const prevTask = Math.max(0, ...hw.map((h) => /^tg-(m?\d+)-(\d+)$/.exec(h.id)).filter((t) => t && t[1] === tg[1] && Number(t[2]) < msgId).map((t) => Number(t[2])));
+    const before = own.filter((m) => m.chat_id === chatId && m.message_id < msgId && m.message_id > prevTask && at && at - Date.parse(m.posted_at) <= 3600 * 1000);
+    const same = own.filter((m) => m.chat_id === chatId && (m.message_id === msgId || m.message_id === replyTo));
+    const after = own.filter((m) => m.chat_id === chatId && m.message_id > msgId && at && Date.parse(m.posted_at) - at <= 30 * 60 * 1000);
+    const near = [...new Set([...same, ...before, ...after])];
+    if (near.length) return near.sort((a, c) => a.message_id - c.message_id).slice(0, 10);
   }
   const strong = [...x.telegram.matchAll(/(?:дорожк\S*|трек\S*|track|pista|аудио|audio|№)\s*(\d{1,3})/gi)].map((m) => m[1]);
   if (strong.length) {
@@ -1127,7 +1133,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "97";
+const APP_VERSION = "98";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
