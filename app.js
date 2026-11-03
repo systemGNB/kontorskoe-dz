@@ -161,9 +161,10 @@ function classEnd(x) {
 }
 /** Задание ещё актуально: срок не прошёл, а у языков — пара ещё не закончилась. */
 function isCurrent(x) {
-  if (!x.due || gap(x.due) >= 0) return true;
+  // Языки: задание в ленте ровно до конца пары, к которой задано (и не дольше — сразу после пары уходит).
   const c = classEnd(x);
-  return !!c && today + " " + mskNow() < c.day + " " + c.end;
+  if (c) return today + " " + mskNow() < c.day + " " + c.end;
+  return !x.due || gap(x.due) >= 0;
 }
 function dueLine(x) {
   let [t, cls] = badge(x.due);
@@ -1126,7 +1127,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "96";
+const APP_VERSION = "97";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
