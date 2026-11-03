@@ -287,9 +287,16 @@ async function loadScans(det, pages) {
 /* ---------- Материалы из Telegram ---------- */
 const DAY = 86400000;
 /** Материалы к заданию: по номеру («дорожка 47», «pista 12») или по времени — за 2 недели до срока. */
+/** Английский: во вторник до 12:20 (по Москве) идёт пара — файлы из этого времени к ДЗ не относятся. */
+function inEnglishClass(iso) {
+  const msk = new Date(Date.parse(iso) + 3 * 3600000);
+  return msk.getUTCDay() === 2 && msk.getUTCHours() * 60 + msk.getUTCMinutes() < 12 * 60 + 20;
+}
 function taskMaterials(x) {
   if (!x.telegram) return [];
-  const own = mats.filter((m) => m.course === x.course);
+  // Если задание — ответ на более раннее сообщение («ответ на #123»), файл из того сообщения прикрепляем всегда.
+  const replyTo = Number((x.telegram.match(/ответ на #(\d+)/) || [])[1] || 0);
+  const own = mats.filter((m) => m.course === x.course && (x.course !== "Английский" || m.message_id === replyTo || !inEnglishClass(m.posted_at)));
   if (!own.length) return [];
   // Задание пришло из Telegram-группы: вложения того же сообщения + всё, что прислали в группу
   // за 3 часа до и после него (обычно аудио и файлы идут рядом с текстом задания).
@@ -297,7 +304,7 @@ function taskMaterials(x) {
   if (tg) {
     const chatId = Number(tg[1].replace("m", "-")), msgId = Number(tg[2]);
     const at = Date.parse(x.created_at || "") || 0;
-    const near = own.filter((m) => m.chat_id === chatId && (m.message_id === msgId || (at && Math.abs(Date.parse(m.posted_at) - at) <= 3 * 3600 * 1000)));
+    const near = own.filter((m) => m.chat_id === chatId && (m.message_id === msgId || m.message_id === replyTo || (at && Math.abs(Date.parse(m.posted_at) - at) <= 3 * 3600 * 1000)));
     if (near.length) return near.sort((a, c) => Date.parse(a.posted_at) - Date.parse(c.posted_at)).slice(0, 10);
   }
   const strong = [...x.telegram.matchAll(/(?:дорожк\S*|трек\S*|track|pista|аудио|audio|№)\s*(\d{1,3})/gi)].map((m) => m[1]);
@@ -1119,7 +1126,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "95";
+const APP_VERSION = "96";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
