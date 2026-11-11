@@ -1108,7 +1108,10 @@ async function load() {
     // Названия курсов из Google Класса приводим к предметам сайта (например «МСС-3_3бс(5)_…» → «МСС»).
     const COURSE_FIX = [[/^мсс|матстат|математическ.*статист/i, "МСС"], [/ммси|методолог/i, "ММСИ"], [/институт/i, "Социология социальных институтов"]];
     for (const x of h.data || []) { const f = COURSE_FIX.find(([re]) => re.test(x.course)); if (f) x.course = f[1]; }
-    hw = (h.data || []).filter((x) => /^gc-/.test(x.id) ? x.due && gap(x.due) >= 0 : x.due || x.course !== "Анализ данных в социологии");
+    // Временные задания (id «until-gc-…»): скрываем, как только из Google Класса пришло новое задание по тому же предмету.
+    const gcNew = (h.data || []).filter((x) => /^gc-(?!a)/.test(x.id));
+    const replaced = (x) => /^until-gc-/.test(x.id) && gcNew.some((g) => g.course === x.course && Date.parse(g.created_at || "") > Date.parse(x.created_at || ""));
+    hw = (h.data || []).filter((x) => !replaced(x)).filter((x) => /^gc-/.test(x.id) ? x.due && gap(x.due) >= 0 : x.due || x.course !== "Анализ данных в социологии");
     mine = new Set((d.data || []).map((r) => r.homework_id));
     lsSet("kdz-hw", hw); lsSet("kdz-done", [...mine]);
     const t = new Date();
@@ -1174,7 +1177,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 /* ---------- PWA ---------- */
-const APP_VERSION = "99";
+const APP_VERSION = "100";
 $("status").dataset.v = APP_VERSION;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
